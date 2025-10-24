@@ -5,16 +5,18 @@ This project implements a text processing and exploratory data analysis system f
 ## SETUP INSTRUCTIONS FOR GOOGLE COLAB
 ### Set Your File Path - IMPORTANT!
 
-'''
-  Teacher Path - UPDATE WITH YOUR PATH
+```
+  # Teacher Path - UPDATE WITH YOUR PATH
   docs_path =
-'''
-
+```
 Make sure your JSON file is in Google Drive and UPDATE THIS PATH with your actual file location of fashion_products_dataset.json.
+
 After setting up the path, run all cells sequentially. The code will:
-Load and display the raw data
-Clean and preprocess all text fields
-Extract product details into separate columns
-Perform statistical analysis
-Generate visualizations
-REMEMBER: The most important step is correctly setting the docs_path variable to point to your JSON file in Google Drive.
+
+1. Load and display the raw data
+2. Clean and preprocess all text fields
+3. Extract product details into separate columns
+4. Perform statistical analysis
+5. Generate visualizations
+
+### REMEMBER: The most important step is correctly setting the docs_path variable to point to your JSON file in Google Drive.

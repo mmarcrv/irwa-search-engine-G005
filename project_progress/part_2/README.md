@@ -28,4 +28,4 @@ After completing Part 1, run the Part 2 cells sequentially to:
 In the last cell of section 2.1.2 you can enter one of the proposed queries or try your own custom queries, to see how the system retrieves and ranks results.
 
 
-### REMEMBER: The most important step is correctly setting both the docs_path, validation_path and ground_thurth.csv variable to point to your documents files in Google Drive. 
+### REMEMBER: The most important step is correctly setting both the docs_path, validation_path and ground_thurth.csv variables to point to your documents files in Google Drive. 

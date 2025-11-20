@@ -39,7 +39,7 @@ rag_generator = RAGGenerator()
 # load documents corpus into memory.
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
-file_path = path + "/" + os.getenv("DATA_FILE_PATH")
+file_path = path + "/" + os.getenv("DATA_FILE_PATH") #CANVIAR AL DATASET NET
 corpus = load_corpus(file_path)
 # Log first element of corpus to verify it loaded correctly:
 print("\nCorpus is loaded... \n First element:\n", list(corpus.values())[0])

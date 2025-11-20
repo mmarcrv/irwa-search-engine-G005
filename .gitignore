@@ -135,8 +135,7 @@ dmypy.json
 .env
 .venv
 irwa_env/
-.gitkeep
-fashion_products_dataset.json
+data/
 irwa_venv/
 
 .vscode/

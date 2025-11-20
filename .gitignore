@@ -135,7 +135,7 @@ dmypy.json
 .env
 .venv
 irwa_env/
-data/
+.gitkeep
 irwa_venv/
 
 .vscode/

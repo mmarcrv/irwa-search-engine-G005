@@ -39,7 +39,15 @@ rag_generator = RAGGenerator()
 # load documents corpus into memory.
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
-file_path = path + "/" + os.getenv("DATA_FILE_PATH") #CANVIAR AL DATASET NET
+
+#accept the environment variable only if it points to a .zip, otherwise use the default zip. 
+env = os.getenv("DATA_FILE_PATH")
+if env and env.lower().endswith(".zip") and os.path.exists(os.path.join(path, env)):
+    data_rel = env
+else:
+    data_rel = "data/cleaned_fashion_products.zip"
+file_path = os.path.join(path, data_rel)
+print("Using dataset file:", file_path) #to check which dataset is being used
 corpus = load_corpus(file_path)
 # Log first element of corpus to verify it loaded correctly:
 print("\nCorpus is loaded... \n First element:\n", list(corpus.values())[0])

@@ -22,6 +22,27 @@ class Document(BaseModel):
     url: Optional[str] = None
     images: Optional[List[str]] = None
 
+    # Adding the new fields
+    cleaned_title: Optional[List[str]] = None
+    cleaned_description: Optional[List[str]] = None
+    cleaned_title_description: Optional[List[str]] = None
+
+    product_style_code: Optional[str] = None
+    product_closure: Optional[str] = None
+    product_pockets: Optional[str] = None
+    product_fabric: Optional[str] = None
+    product_pattern: Optional[str] = None
+    product_color: Optional[str] = None
+
+    cleaned_category: Optional[List[str]] = None
+    cleaned_sub_category: Optional[List[str]] = None
+    cleaned_product_fabric: Optional[List[str]] = None
+    cleaned_product_pattern: Optional[List[str]] = None
+    cleaned_product_color: Optional[List[str]] = None
+
+    cleaned_title_description_extra_fields: Optional[List[str]] = None
+
+
     def to_json(self):
         return self.model_dump_json()
 

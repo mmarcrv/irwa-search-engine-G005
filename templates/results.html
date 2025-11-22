@@ -13,11 +13,20 @@
     {% for item in results_list %}
         <div class="pb-3">
             <div class="doc-title">
-                <a href="{{ item.url }}">{{ item.title }}...
+                <a href="{{ url_for('doc_details') }}?pid={{ item.pid }}">{{ item.title }}</a>...
                 </a>
             </div>
             <div class="doc-desc">
-                {{ item.doc_date }} — {{ item.description }}
+                <strong>Product description:</strong> {{ item.description }}<br>
+                <strong>Selling price:</strong> {{ item.selling_price }}<br>
+                <strong>Discount:</strong> {{ item.discount }}<br>
+                <strong>Average rating:</strong> {{ item.average_rating }}<br>
+                {% if item.out_of_stock %}
+                    <span style="color: red;"><strong>Out of stock</strong></span>
+                {% else %}
+                    <span style="color: green;"><strong>In stock</strong></span>
+                {% endif %}<br>
+                <a href="{{ item.url }}" target="_blank">Visit product page</a>
             </div>
 
         </div>

@@ -8,11 +8,31 @@
 <div><a href="/" >Home</a></div>
 <div><a href="/stats" >Stats</a></div>
 <div><a href="/dashboard" >Dashboard</a></div>
-<h1>Document Detail Page</h1>
-<p>This is a placeholder for document details.</p>
-<p>Here you can display more information about the document.</p>
-<p>For example, you might show the full text of the document, metadata, or other relevant details.</p>
-<p>You can also include links to related documents or resources.</p>
-<p>Feel free to customize this page to fit the needs of your application.</p>
+<h1>{{ doc.title }}</h1>
+<p><strong>Product description:</strong> {{ doc.description }}</p>
+<p><strong>Brand:</strong> {{ doc.brand }}</p>
+<p><strong>Category / Subcategory:</strong> {{ doc.category }} / {{ doc.sub_category }}</p>
+<p><strong>Price:</strong> {{ doc.selling_price }}</p>
+<p><strong>Discount:</strong> {{ doc.discount }}</p>
+<p><strong>Average Rating:</strong> {{ doc.average_rating }}</p>
+<p><strong>Stock status:</strong>
+    {% if doc.out_of_stock %}
+        <span style="color:red">Out of stock</span>
+    {% else %}
+        <span style="color:green">In stock</span>
+    {% endif %}
+</p>
+<p><strong>Product details:</strong></p>
+<ul>
+    {% for key, value in doc.product_details.items() %}
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
+    {% endfor %}
+</ul>
+{% if doc.images %}
+    <h3>Images:</h3>
+    {% for img_url in doc.images %}
+        <img src="{{ img_url }}" width="150">
+    {% endfor %}
+{% endif %}
 </body>
 </html>

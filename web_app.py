@@ -12,6 +12,8 @@ from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
 
+from myapp.search.algorithms import token_cleaning_text
+
 from myapp.generation.rag import RAGGenerator
 from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env
@@ -85,16 +87,18 @@ def search_form_post():
 
     session['last_search_query'] = search_query
 
-    search_id = analytics_data.save_query_terms(search_query)
+    query_terms = token_cleaning_text(search_query)
 
-    results = search_engine.search(search_query, search_id, corpus, corpus_dataframe)
+    results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe)
+
+    found_count = len(results)
+    session['last_found_count'] = found_count
+
+    search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
 
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
     print("RAG response:", rag_response)
-
-    found_count = len(results)
-    session['last_found_count'] = found_count
 
     print(session)
 

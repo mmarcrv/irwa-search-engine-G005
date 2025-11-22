@@ -141,7 +141,6 @@ def rank_documents(terms, docs, index, idf, tf):
 
 def search_tf_idf(query, index, idf, tf):
 
-    query = token_cleaning_text(query)
     docs = set()
     for term in query:
         try:
@@ -159,13 +158,13 @@ def search_tf_idf(query, index, idf, tf):
 
 
 
-def search_in_corpus(query, corpus, corpus_dataframe):
+def search_in_corpus(query, query_terms, corpus, corpus_dataframe):
     # 1. create create_tfidf_index
     index, tf, df, idf = create_index_tfidf(corpus_dataframe)
     print("\nCreated index, tf, df and idf...")
 
     # 2. apply ranking
-    ranked_docs, doc_scores = search_tf_idf(query, index, idf, tf)
+    ranked_docs, doc_scores = search_tf_idf(query_terms, index, idf, tf)
     
     print(f"Top 5 results:\n")
     for i, pid in enumerate(ranked_docs[:5]):

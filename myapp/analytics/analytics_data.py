@@ -3,7 +3,6 @@ import random
 import altair as alt
 import pandas as pd
 
-
 class AnalyticsData:
     """
     An in memory persistence object.
@@ -14,10 +13,26 @@ class AnalyticsData:
     fact_clicks = dict([])
 
     ### Please add your custom tables here:
+    query_table = {}
+    counter_query_id = 1
 
-    def save_query_terms(self, terms: str) -> int:
-        print(self)
-        return random.randint(0, 100000)
+    def save_query_terms(self, search_query, query_terms, num_results):
+        num_terms = len(query_terms)
+
+        query_id = self.counter_query_id
+        self.counter_query_id += 1
+
+        self.query_table[query_id] = {
+            "search_query": search_query,
+            "order": query_terms,
+            "num_terms": num_terms,
+            "num_results": num_results,
+            "timestamp": pd.Timestamp.now()
+        }
+
+        print("Saved query:", self.query_table[query_id])
+
+        return query_id
     
     def plot_number_of_views(self):
         # Prepare data

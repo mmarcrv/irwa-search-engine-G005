@@ -79,6 +79,7 @@ def index():
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
 
     user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)
+    session['user_id'] = user_id
     print(session)
     return render_template('index.html', page_title="Welcome")
 
@@ -98,7 +99,7 @@ def search_form_post():
     session['last_found_count'] = found_count
 
     search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
-
+    session['search_id'] = search_id
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
     print("RAG response:", rag_response)

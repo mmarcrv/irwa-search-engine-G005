@@ -67,7 +67,8 @@ def index():
 
     # flask server creates a session by persisting a cookie in the user's browser.
     # the 'session' object keeps data between multiple requests. Example:
-    session['some_var'] = "Some value that is kept in session"
+    if "session_id" not in session:
+        session['session_id'] = analytics_data.new_session()
 
     user_agent = request.headers.get('User-Agent')
     print("Raw user browser:", user_agent)
@@ -76,6 +77,8 @@ def index():
     agent = httpagentparser.detect(user_agent)
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
+
+    user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)
     print(session)
     return render_template('index.html', page_title="Welcome")
 

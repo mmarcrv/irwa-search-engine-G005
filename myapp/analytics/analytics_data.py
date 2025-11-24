@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import random
 import altair as alt
@@ -15,6 +16,30 @@ class AnalyticsData:
     ### Please add your custom tables here:
     query_table = {}
     counter_query_id = 1
+    sessions = []
+    counter_user_id = 1
+    user_table = {}
+
+    def new_session(self):
+
+        existing_ids = sorted([s["session_id"] for s in self.sessions])
+
+        new_id = 1
+        for sid in existing_ids:
+            if sid == new_id:
+                new_id += 1
+            else:
+                break
+
+        new_session = {
+            "session_id": new_id,
+            "start_time": datetime.now()
+        }
+
+        self.sessions.append(new_session)
+
+        return new_id
+    
 
     def save_query_terms(self, search_query, query_terms, num_results):
         num_terms = len(query_terms)
@@ -33,6 +58,28 @@ class AnalyticsData:
         print("Saved query:", self.query_table[query_id])
 
         return query_id
+    
+    def save_user_context(self, session_id, user_ip, agent):
+        
+        user_id = self.counter_user_id
+        self.counter_user_id += 1
+
+        browser = agent.get("browser", {}).get("name", "Unknown")
+        os = agent.get("platform", {}).get("name", "Unknown")
+        ip = user_ip
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self.user_table[user_id] = {
+            "session_id": session_id,
+            "browser": browser,
+            "os": os,
+            "ip": ip,
+            "timestamp": timestamp,
+        }
+
+        print("Saved user:", self.user_table[user_id])
+
+        return user_id
     
     def plot_number_of_views(self):
         # Prepare data

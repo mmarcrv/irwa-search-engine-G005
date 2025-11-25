@@ -123,8 +123,8 @@ def doc_details():
     print("doc details session: ")
     print(session)
 
-    res = session["some_var"]
-    print("recovered var from session:", res)
+    query_id = session["search_id"]
+    print("Query_id:", query_id)
 
     # get the query string parameters from request
     clicked_doc_id = request.args["pid"]

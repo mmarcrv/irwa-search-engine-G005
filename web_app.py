@@ -60,6 +60,8 @@ corpus_dataframe = pd.DataFrame(
         [doc.model_dump() for doc in corpus.values()]
     )
 
+index_tf, tf, df, idf = create_index_tfidf(corpus_dataframe)
+
 # Home URL "/"
 @app.route('/')
 def index():
@@ -93,7 +95,7 @@ def search_form_post():
 
     query_terms = token_cleaning_text(search_query)
 
-    results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe)
+    results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe, index_tf, tf, idf)
 
     found_count = len(results)
     session['last_found_count'] = found_count

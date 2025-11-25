@@ -25,13 +25,13 @@ def dummy_search(corpus: dict, search_id, num_results=20):
 class SearchEngine:
     """Class that implements the search engine logic"""
 
-    def search(self, search_query,  query_terms, corpus, corpus_dataframe):
+    def search(self, search_query,  query_terms, corpus, corpus_dataframe, index, tf, idf):
         print("Search query:", search_query)
 
         results = []
         ### You should implement your search logic here:
         # results = dummy_search(corpus, search_id)  # replace with call to search algorithm
 
-        results = search_in_corpus(search_query, query_terms, corpus, corpus_dataframe)
+        results = search_in_corpus(search_query, query_terms, corpus, corpus_dataframe, index, tf, idf)
         
         return results

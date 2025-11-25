@@ -35,11 +35,6 @@ def token_cleaning_text(text):
 
 def create_index_tfidf(data):
 
-    print("HOLA 1")
-    print(data.columns)  
-    
-    print("HOLA 2")
-
     num_documents = len(data)
     index = defaultdict(list)
     tf = defaultdict(list)
@@ -158,9 +153,9 @@ def search_tf_idf(query, index, idf, tf):
 
 
 
-def search_in_corpus(query, query_terms, corpus, corpus_dataframe):
+def search_in_corpus(query, query_terms, corpus, corpus_dataframe, index, tf, idf):
     # 1. create create_tfidf_index
-    index, tf, df, idf = create_index_tfidf(corpus_dataframe)
+    
     print("\nCreated index, tf, df and idf...")
 
     # 2. apply ranking

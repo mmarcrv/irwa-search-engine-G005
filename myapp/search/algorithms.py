@@ -35,11 +35,6 @@ def token_cleaning_text(text):
 
 def create_index_tfidf(data):
 
-    print("HOLA 1")
-    print(data.columns)  
-    
-    print("HOLA 2")
-
     num_documents = len(data)
     index = defaultdict(list)
     tf = defaultdict(list)

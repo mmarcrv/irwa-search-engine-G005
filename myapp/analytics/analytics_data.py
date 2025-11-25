@@ -1,6 +1,5 @@
 from datetime import datetime
 import json
-import random
 import altair as alt
 import pandas as pd
 
@@ -179,7 +178,6 @@ class AnalyticsData:
         clicks = self.document_clicks_table.get(doc_id, [])
 
         for click in reversed(clicks):
-            print("HOLA x1")
             print(click["query_id"])
             print(query_id)
             print(click["dwell_time"])

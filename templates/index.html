@@ -1,18 +1,28 @@
 {% extends "base.html" %}
 {% block page_title %}{{ page_title }}{% endblock %}
 {% block content %}
-    <div class="centered">
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-        <form class="d-flex" method="POST" onSubmit='return validate();' action="/search">
-            <input class="form-control me-2" name="search-query" type="search" placeholder="Search" aria-label="Search"
-                   autofocus="autofocus">
-            <button class="btn btn-primary" type="submit" onclick='this.form.submit();'>Search</button>
-            <input name="upf-irwa-hidden" type="hidden" value="123">
-        </form>
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
+<div class="centered">
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+
+    <div style="margin-bottom: 10px; text-align: left;">
+        <select class="form-select" name="engine" id="engine" style="width: 150px;">
+            <option value="tfidf">TF-IDF</option>
+            <option value="bm25">BM25</option>
+            <option value="pepito">Our search engine: pepito score</option>
+        </select>
     </div>
+
+    <form class="d-flex" method="POST" onSubmit='return validate();' action="/search">
+        <input class="form-control me-2" name="search-query" type="search" placeholder="Search" aria-label="Search"
+               autofocus="autofocus">
+        <button class="btn btn-primary" type="submit" onclick='this.form.submit();'>Search</button>
+        <input name="upf-irwa-hidden" type="hidden" value="123">
+    </form>
+
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+</div>
 {% endblock %}

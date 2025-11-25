@@ -1,3 +1,4 @@
+import json
 import os
 from json import JSONEncoder
 
@@ -72,7 +73,8 @@ def index():
     # the 'session' object keeps data between multiple requests. Example:
     if "session_id" not in session:
         session['session_id'] = analytics_data.new_session()
-
+        print("HOOOOLA")
+    
     user_agent = request.headers.get('User-Agent')
     print("Raw user browser:", user_agent)
 
@@ -81,8 +83,10 @@ def index():
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
 
-    user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)
-    session['user_id'] = user_id
+    if "user_id" not in session:
+        user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)
+        session['user_id'] = user_id
+    
     print(session)
     return render_template('index.html', page_title="Welcome")
 
@@ -97,12 +101,16 @@ def search_form_post():
     query_terms = token_cleaning_text(search_query)
 
     results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe, index_tf, tf, idf)
+    session['last_ranked_docs'] = [doc.pid for doc in results[:20]]
 
     found_count = len(results)
     session['last_found_count'] = found_count
 
     search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
     session['search_id'] = search_id
+
+    analytics_data.add_query(session['session_id'], search_id, query_terms)
+    
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
     print("RAG response:", rag_response)
@@ -133,14 +141,18 @@ def doc_details():
 
     doc = corpus[clicked_doc_id]
 
-    # store data in statistics table 1
-    if clicked_doc_id in analytics_data.fact_clicks.keys():
-        analytics_data.fact_clicks[clicked_doc_id] += 1
-    else:
-        analytics_data.fact_clicks[clicked_doc_id] = 1
+    ranked_docs = session.get('last_ranked_docs', [])
 
-    print("fact_clicks count for id={} is {}".format(clicked_doc_id, analytics_data.fact_clicks[clicked_doc_id]))
-    print(analytics_data.fact_clicks)
+    try:
+        ranking = ranked_docs.index(clicked_doc_id) + 1
+    except ValueError:
+        ranking = -1
+
+    analytics_data.save_document_click(doc_id=clicked_doc_id, query_id=query_id, ranking=ranking)
+
+    print("Current document clicks table:")
+    print(analytics_data.document_clicks_table)
+
     return render_template('doc_details.html', doc=doc)
 
 
@@ -152,9 +164,9 @@ def stats():
     """
 
     docs = []
-    for doc_id in analytics_data.fact_clicks:
+    for doc_id, clicks_list in analytics_data.document_clicks_table.items():
         row: Document = corpus[doc_id]
-        count = analytics_data.fact_clicks[doc_id]
+        count = len(clicks_list)
         doc = StatsDocument(pid=row.pid, title=row.title, description=row.description, url=row.url, count=count)
         docs.append(doc)
     
@@ -166,9 +178,10 @@ def stats():
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     visited_docs = []
-    for doc_id in analytics_data.fact_clicks.keys():
+    for doc_id, clicks_list in analytics_data.document_clicks_table.items():
         d: Document = corpus[doc_id]
-        doc = ClickedDoc(doc_id, d.description, analytics_data.fact_clicks[doc_id])
+        count = len(clicks_list)
+        doc = ClickedDoc(doc_id, d.description, count)
         visited_docs.append(doc)
 
     # simulate sort by ranking
@@ -183,6 +196,23 @@ def dashboard():
 def plot_number_of_views():
     return analytics_data.plot_number_of_views()
 
+@app.route('/log_dwell_time', methods=['POST'])
+def log_dwell_time():
+    data = json.loads(request.data.decode("utf-8"))
+
+    doc_id = data["doc_id"]
+    query_id = data["query_id"]
+    dwell_time_ms = data["dwell_time_ms"]
+
+    analytics_data.update_dwell_time(doc_id, query_id, dwell_time_ms)
+
+    return "", 204   # resposta mínima per sendBeacon
+
+@app.route('/reset_session')
+def reset_session():
+    session.clear()
+    print("Session cleared. Next visit will create a new session.")
+    return "Session cleared. Next visit will create a new session."
 
 if __name__ == "__main__":
     app.run(port=8088, host="0.0.0.0", threaded=False, debug=os.getenv("DEBUG"))

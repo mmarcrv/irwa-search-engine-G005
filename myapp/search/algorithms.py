@@ -155,8 +155,7 @@ def search_tf_idf(query, index, idf, tf):
 
 def search_in_corpus(query, query_terms, corpus, corpus_dataframe, index, tf, idf):
     # 1. create create_tfidf_index
-    
-    print("\nCreated index, tf, df and idf...")
+    # not in this function to avoid repeating this step for each query search
 
     # 2. apply ranking
     ranked_docs, doc_scores = search_tf_idf(query_terms, index, idf, tf)

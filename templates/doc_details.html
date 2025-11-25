@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <title>Document Detail - IRWA Search Engine</title>
 </head>
+<script>
+let enterTime = Date.now();
+
+// S'envia quan l'usuari surt de la pàgina
+window.addEventListener("beforeunload", function () {
+    let dwellTime = Date.now() - enterTime;
+
+    navigator.sendBeacon(
+        "/log_dwell_time",
+        JSON.stringify({
+            doc_id: "{{ doc.pid }}",
+            query_id: "{{ session['search_id'] }}",
+            dwell_time_ms: dwellTime
+        })
+    );
+});
+</script>
+    
 <body>
 <div><a href="/" >Home</a></div>
 <div><a href="/stats" >Stats</a></div>

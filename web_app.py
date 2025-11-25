@@ -61,6 +61,7 @@ corpus_dataframe = pd.DataFrame(
     )
 
 index_tf, tf, df, idf = create_index_tfidf(corpus_dataframe)
+print("\nCreated index, tf, df and idf...")
 
 # Home URL "/"
 @app.route('/')

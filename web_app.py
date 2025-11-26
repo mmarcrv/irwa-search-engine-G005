@@ -7,6 +7,7 @@ from flask import Flask, render_template, session
 from flask import request
 import pandas as pd
 from rank_bm25 import BM25Okapi
+import mysql.connector
 
 from myapp.analytics.analytics_data import AnalyticsData, ClickedDoc
 from myapp.search.load_corpus import load_corpus

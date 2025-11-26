@@ -2,20 +2,42 @@ def insert_user(conn, browser, os, ip_address, first_visit, last_visit=None):
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO users (browser, os, ip_address, first_visit, last_visit)
+        INSERT INTO users (browser, os, ip, first_seen, last_seen)
         VALUES (%s, %s, %s, %s, %s)
-        RETURNING user_id;
     """
 
     cursor.execute(sql, (browser, os, ip_address, first_visit, last_visit))
     
-    # Get the generated user_id from the RETURNING clause
-    user_id = cursor.fetchone()[0]
+    # Get the last inserted ID - MySQL way
+    user_id = cursor.lastrowid
     
     conn.commit()
     cursor.close()
     
     return user_id
+
+
+def insert_session(conn, start_time, user_id):
+    cursor = conn.cursor()
+
+    sql = """
+        INSERT INTO users (start_time, user_id)
+        VALUES (%s, %s)
+    """
+
+    cursor.execute(sql, (start_time, user_id))
+    
+    # Get the generated user_id from the RETURNING clause
+    session_id = cursor.lastrowid
+
+    
+    conn.commit()
+    cursor.close()
+    
+    return session_id
+
+
+
     
 def fetch_queries(conn, limit=5):
     cursor = conn.cursor()

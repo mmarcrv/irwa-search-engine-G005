@@ -27,7 +27,7 @@ def insert_session(conn, start_time, user_id):
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO session (start_time, user_id)
+        INSERT INTO sessions (start_time, user_id)
         VALUES (%s, %s)
     """
 

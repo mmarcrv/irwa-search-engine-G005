@@ -6,6 +6,7 @@ import httpagentparser  # for getting the user agent as json
 from flask import Flask, render_template, session
 from flask import request
 import pandas as pd
+from rank_bm25 import BM25Okapi
 
 from myapp.analytics.analytics_data import AnalyticsData, ClickedDoc
 from myapp.search.load_corpus import load_corpus
@@ -78,6 +79,10 @@ corpus_dataframe = pd.DataFrame(
 index_tf, tf, df, idf = create_index_tfidf(corpus_dataframe)
 print("\nCreated index, tf, df and idf...")
 
+paragraph_tokens = corpus_dataframe["cleaned_title_description_extra_fields"].tolist()
+bm25 = BM25Okapi(paragraph_tokens)
+print("BM25 search engine ready:", bm25)
+
 # Home URL "/"
 @app.route('/')
 def index():
@@ -109,12 +114,13 @@ def index():
 def search_form_post():
     
     search_query = request.form['search-query']
+    selected_engine = request.form.get('engine', 'tfidf') 
 
     session['last_search_query'] = search_query
 
     query_terms = token_cleaning_text(search_query)
 
-    results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe, index_tf, tf, idf)
+    results = search_engine.search(search_query, query_terms, corpus, corpus_dataframe, index_tf, tf, idf, bm25, selected_engine)
     session['last_ranked_docs'] = [doc.pid for doc in results[:20]]
 
     found_count = len(results)

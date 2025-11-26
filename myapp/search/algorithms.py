@@ -152,14 +152,147 @@ def search_tf_idf(query, index, idf, tf):
     return ranked_docs, doc_scores
 
 
+def get_top_n(bm25_model, corpus_dataframe, query_tokens, n=10):
 
-def search_in_corpus(query, query_terms, corpus, corpus_dataframe, index, tf, idf):
+    docs_with_all_terms = []
+    for i, doc_tokens in enumerate(corpus_dataframe["cleaned_title_description_extra_fields"]):
+        if all(term in doc_tokens for term in query_tokens):
+            docs_with_all_terms.append(i)
+
+    if not docs_with_all_terms:
+        print("No documents contain all query terms.")
+        return []
+
+    scores = np.array(bm25_model.get_scores(query_tokens))
+
+    filtered_scores = scores[docs_with_all_terms]
+
+    top_n_local = np.argpartition(filtered_scores, -n)[-n:]
+    top_n_local = top_n_local[np.argsort(-filtered_scores[top_n_local])]
+
+    top_n_global = [docs_with_all_terms[i] for i in top_n_local]
+    top_n_pids = corpus_dataframe.iloc[top_n_global]["pid"].tolist()
+
+    return top_n_pids
+
+def calculate_pepito_score(cosine_similarity, average_rating, discount, out_of_stock, cosine_factor=0.40, discount_factor=0.30, rating_factor=0.3, stock_penalty=0.9):
+    # Normalize average_rating and dicount to have values between 0-1, we need matching scales to have a balanced score
+    normalized_average_rating = average_rating / 5.0
+    normalized_discount = discount / 100.0
+
+    # Calculate pepito_score with the weights we have decided for each feature
+    pepito_score = (
+        cosine_factor * cosine_similarity +
+        discount_factor * normalized_discount +
+        rating_factor * normalized_average_rating
+    )
+
+    # we will apply the penalty if the item is not in stock
+    if out_of_stock:
+        pepito_score *= 1 - stock_penalty
+
+    return pepito_score
+
+def rank_documents_pepito(terms, docs, index, idf, tf, original_df, cosine_factor=0.40, discount_factor=0.30, rating_factor=0.3, stock_penalty=0.9):
+    result_docs = []
+    doc_scores = []
+
+    #for each term in the query, obtain the set of documents that contain it
+    docs_with_query_terms = []
+    for term in terms:
+        if term in index:
+            #the term appears in at least one document because it's present in the index
+            #get all documents where the term appears
+            term_docs = {doc for doc, _ in index[term]}
+            docs_with_query_terms.append(term_docs)
+
+    # if no query terms are found in the index, there are no matching documents
+    if not docs_with_query_terms:
+        print("No query terms in the index")
+        return result_docs, doc_scores
+
+    # intersection: keep only documents that contain all query terms
+    docs_with_all_query_terms = set.intersection(*docs_with_query_terms)
+    if not docs_with_all_query_terms:
+        print("No documents with all query terms")
+        return result_docs, doc_scores
+
+    #interested only on the element of the docVector corresponding to the query terms
+    # remaining elements 0
+    doc_vectors = defaultdict(lambda: [0] * len(terms))
+    query_vector = [0] * len(terms)
+
+    # compute the norm for the query tf
+    query_terms_count = collections.Counter(terms)
+    query_norm = la.norm(list(query_terms_count.values()))
+
+    for termIndex, term in enumerate(terms):
+        if term not in index:
+            continue
+
+        ## Compute tf*idf(normalize TF as done with documents)
+        query_vector[termIndex] = query_terms_count[term] / query_norm * idf[term]
+
+        # Generate doc_vectors for matching docs
+        for doc_index, (doc, postings) in enumerate(index[term]):
+            if doc in docs_with_all_query_terms:
+                doc_vectors[doc][termIndex] = tf[term][doc_index] * idf[term]
+
+    # Calculate initial cosine similarity scores
+    initial_cosine_scores = []
+    for doc, curDocVec in doc_vectors.items():
+        dot_product = np.dot(curDocVec, query_vector)
+        doc_norm = la.norm(curDocVec)
+        query_norm_val = la.norm(query_vector)
+        if doc_norm > 0 and query_norm_val > 0:
+            cosine_similarity = dot_product / (doc_norm * query_norm_val)
+            initial_cosine_scores.append([cosine_similarity, doc])
+
+    # Calculate Pepito Score for each document
+    final_ranked_documents = []
+    for cos_sim, doc_pid in initial_cosine_scores:
+        doc_info = original_df[original_df['pid'] == doc_pid].iloc[0]
+        average_rating = doc_info['average_rating']
+        discount = doc_info['discount']
+        out_of_stock = doc_info['out_of_stock']
+
+        # this takes the default values but can be changed setting the factors to the desired ones
+        pepito_score = calculate_pepito_score(cos_sim, average_rating, discount, out_of_stock, cosine_factor, discount_factor, rating_factor, stock_penalty)
+        final_ranked_documents.append([pepito_score, doc_pid])
+
+    # Rank documents by Pepito Score
+    final_ranked_documents.sort(key=lambda x: x[0], reverse=True)
+
+    result_docs = [x[1] for x in final_ranked_documents]
+    doc_scores = final_ranked_documents
+
+    return result_docs, doc_scores
+
+def search_pepito(query_tokens, index, original_df, idf, tf, cosine_factor=0.40, discount_factor=0.30, rating_factor=0.3, stock_penalty=0.9):
+    docs = set()
+
+    for term in query_tokens:
+        if term in index:
+            term_docs = {posting[0] for posting in index[term]}
+            docs.update(term_docs)
+
+    docs_list = list(docs)
+    ranked_docs, doc_scores = rank_documents_pepito(query_tokens, docs_list, index, idf, tf, original_df, cosine_factor, discount_factor, rating_factor, stock_penalty)
+    return ranked_docs, doc_scores
+
+def search_in_corpus(query, query_terms, corpus, corpus_dataframe, index, tf, idf, bm25, selected_engine):
     # 1. create create_tfidf_index
     # not in this function to avoid repeating this step for each query search
 
     # 2. apply ranking
-    ranked_docs, doc_scores = search_tf_idf(query_terms, index, idf, tf)
-    
+    if selected_engine == "tfidf":
+        ranked_docs, doc_scores = search_tf_idf(query_terms, index, idf, tf)
+    elif selected_engine == "bm25":
+        ranked_docs = get_top_n(bm25, corpus_dataframe, query_terms, n=10)
+    else:
+        # pepitoooo
+        ranked_docs, doc_scores = search_pepito(query_terms, index, corpus_dataframe, idf, tf)
+
     print(f"Top 5 results:\n")
     for i, pid in enumerate(ranked_docs[:5]):
         title = corpus_dataframe[corpus_dataframe['pid'] == pid]['title'].iloc[0]

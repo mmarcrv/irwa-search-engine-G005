@@ -46,17 +46,18 @@ analytics_data = AnalyticsData()
 # instantiate RAG generator
 rag_generator = RAGGenerator()
 
-# DATABASE SETUP
+import pymysql
+
 def get_db():
-    load_dotenv() 
-    conn = mysql.connector.connect(
+    return pymysql.connect(
         host=os.getenv("MYSQLHOST"),
         user=os.getenv("MYSQLUSER"),
         password=os.getenv("MYSQLPASSWORD"),
         database=os.getenv("MYSQLDATABASE"),
-        port=int(os.getenv("MYSQLPORT"))
+        port=int(os.getenv("MYSQLPORT")),
+        cursorclass=pymysql.cursors.DictCursor
     )
-    return conn
+
 
 
 

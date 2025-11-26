@@ -1,9 +1,10 @@
 import json
 import os
 from json import JSONEncoder
+from datetime import datetime
 
 import httpagentparser  # for getting the user agent as json
-from flask import Flask, render_template, session
+from flask import Flask, redirect, render_template, session
 from flask import request
 import pandas as pd
 from rank_bm25 import BM25Okapi
@@ -14,7 +15,7 @@ from myapp.search.load_corpus import load_corpus
 from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
-from myapp.analytics.database import insert_user
+from myapp.analytics.database import insert_user, insert_session
 
 from myapp.search.algorithms import token_cleaning_text
 
@@ -71,20 +72,26 @@ else:
     data_rel = "data/cleaned_fashion_products.zip"
 file_path = os.path.join(path, data_rel)
 print("Using dataset file:", file_path) #to check which dataset is being used
+
 corpus = load_corpus(file_path)
 # Log first element of corpus to verify it loaded correctly:
 print("\nCorpus is loaded... \n First element:\n", list(corpus.values())[0])
+
+# Convert corpus to a dataframe structure
 corpus_dataframe = pd.DataFrame(
         [doc.model_dump() for doc in corpus.values()]
     )
 
+# Create the index, tf, df and idf to avoid repeating this for every search
 index_tf, tf, df, idf = create_index_tfidf(corpus_dataframe)
 print("\nCreated index, tf, df and idf...")
 
+# Create BM25 model to avoid repeating this for every search
 paragraph_tokens = corpus_dataframe["cleaned_title_description_extra_fields"].tolist()
 bm25 = BM25Okapi(paragraph_tokens)
 print("BM25 search engine ready:", bm25)
 
+# Variable to control the session creation
 flag_session = False
 
 # Home URL "/"
@@ -102,15 +109,23 @@ def index():
     agent = httpagentparser.detect(user_agent)
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
-
-    if "user_id" not in session:
-        user_id = insert_user(agent=agent, ip_address=user_ip)
-        analytics_data.save_user_context(user_id= user_id, session_id=session['session_id'], user_ip=user_ip, agent=agent)
-        session['user_id'] = user_id
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    #if flag_session == False:
-        #session_id = database
-        #session['session_id'] = analytics_data.new_session()
+    if "user_id" not in session:
+        conn = get_db()
+        user_id = insert_user(conn, agent=agent, ip_address=user_ip, first_visit=start_time)
+        conn.close()
+        analytics_data.save_user_context(user_id=user_id, user_ip=user_ip, agent=agent, start_time=start_time)
+        session['user_id'] = user_id
+        print("New user created:", user_id)
+    
+    if flag_session == False:
+        conn = get_db()
+        session_id = insert_session(conn, start_time=start_time, user_id=session['user_id'])
+        conn.close()
+        analytics_data.new_session(session_id=session_id, user_id=session['user_id'], start_time=start_time)
+        session['session_id'] = session_id
+        print("New session created:", session_id)
     
     print(session)
     return render_template('index.html', page_title="Welcome")
@@ -140,10 +155,31 @@ def search_form_post():
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
     print("RAG response:", rag_response)
+    session['last_rag_response'] = rag_response
 
     print(session)
 
     return render_template('results.html', results_list=results, page_title="Results", found_counter=found_count, rag_response=rag_response)
+
+@app.route('/results', methods=['GET'])
+def show_previous_results():
+    # Si no hi ha dades, torna a l’index
+    if 'last_ranked_docs' not in session:
+        return redirect('/')
+
+    # Reconstruir els docs ja ordenats
+    ranked_pids = session['last_ranked_docs']
+    results = [corpus[pid] for pid in ranked_pids]
+
+    found_count = session.get('last_found_count', len(results))
+
+    return render_template(
+        'results.html',
+        results_list=results,
+        page_title="Results",
+        found_counter=found_count,
+        rag_response=session.get('last_rag_response', "")
+    )
 
 
 @app.route('/doc_details', methods=['GET'])

@@ -19,12 +19,11 @@ class AnalyticsData:
     sessions = []
     user_table = {}
 
-    def new_session(self, session_id, user_id):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def new_session(self, session_id, user_id, start_time):
 
         new_session = {
             "session_id": session_id,
-            "start_time": timestamp,
+            "start_time": start_time,
             "user_id": user_id,
             "queries": [],
             "missions": []
@@ -128,19 +127,17 @@ class AnalyticsData:
 
         return query_id
     
-    def save_user_context(self, user_id, session_id, user_ip, agent):
+    def save_user_context(self, user_id, user_ip, agent, start_time):
 
         browser = agent.get("browser", {}).get("name", "Unknown")
         os = agent.get("platform", {}).get("name", "Unknown")
         ip = user_ip
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.user_table[user_id] = {
-            "session_id": session_id,
             "browser": browser,
             "os": os,
             "ip": ip,
-            "timestamp": timestamp,
+            "timestamp": start_time,
         }
 
         print("Saved user:", self.user_table[user_id])

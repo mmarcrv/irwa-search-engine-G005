@@ -1,12 +1,11 @@
 from datetime import datetime
 
-def insert_user(conn, agent, ip_address, last_visit=None):
+def insert_user(conn, agent, ip_address, first_visit, last_visit=None):
     cursor = conn.cursor()
 
     browser = agent.get("browser", {}).get("name", "Unknown")
     os = agent.get("platform", {}).get("name", "Unknown")
     ip_address = ip_address
-    first_visit = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     sql = """
         INSERT INTO users (browser, os, ip, first_seen, last_seen)
@@ -28,7 +27,7 @@ def insert_session(conn, start_time, user_id):
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO users (start_time, user_id)
+        INSERT INTO session (start_time, user_id)
         VALUES (%s, %s)
     """
 
@@ -45,7 +44,7 @@ def insert_session(conn, start_time, user_id):
 
 
 
-    
+""" 
 def fetch_queries(conn, limit=5):
     cursor = conn.cursor()
 
@@ -62,3 +61,4 @@ def fetch_queries(conn, limit=5):
 
 # Run the test
 fetch_queries()
+"""  

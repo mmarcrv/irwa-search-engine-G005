@@ -69,6 +69,8 @@ paragraph_tokens = corpus_dataframe["cleaned_title_description_extra_fields"].to
 bm25 = BM25Okapi(paragraph_tokens)
 print("BM25 search engine ready:", bm25)
 
+flag_session = False
+
 # Home URL "/"
 @app.route('/')
 def index():
@@ -76,9 +78,6 @@ def index():
 
     # flask server creates a session by persisting a cookie in the user's browser.
     # the 'session' object keeps data between multiple requests. Example:
-    if "session_id" not in session:
-        session['session_id'] = analytics_data.new_session()
-        print("HOOOOLA")
     
     user_agent = request.headers.get('User-Agent')
     print("Raw user browser:", user_agent)
@@ -87,6 +86,19 @@ def index():
     agent = httpagentparser.detect(user_agent)
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
+
+    #if "user_id" not in session:
+        #user_id = (agafar el user id més petit disponible) de la base de dades per guardar les dades
+        #analytics_data.save_user_context(session['session_id'], user_ip, agent)
+        #session['user_id'] = user_id
+    
+    # if flag_session == False:
+        #session = database
+        #session['session_id'] = analytics_data.new_session()
+    
+    # FORA tot lo de baix
+    if "session_id" not in session:
+        session['session_id'] = analytics_data.new_session()
 
     if "user_id" not in session:
         user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)

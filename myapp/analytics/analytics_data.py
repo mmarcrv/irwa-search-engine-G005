@@ -17,23 +17,15 @@ class AnalyticsData:
     query_table = {}
     counter_query_id = 1
     sessions = []
-    counter_user_id = 1
     user_table = {}
 
-    def new_session(self):
-
-        existing_ids = sorted([s["session_id"] for s in self.sessions])
-
-        new_id = 1
-        for sid in existing_ids:
-            if sid == new_id:
-                new_id += 1
-            else:
-                break
+    def new_session(self, session_id, user_id):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         new_session = {
-            "session_id": new_id,
-            "start_time": datetime.now(),
+            "session_id": session_id,
+            "start_time": timestamp,
+            "user_id": user_id,
             "queries": [],
             "missions": []
         }
@@ -42,7 +34,7 @@ class AnalyticsData:
         print("[DEBUG] Created new session:", new_session)
         print("[DEBUG] Current sessions list:", self.sessions)
 
-        return new_id
+        return session_id
 
     def add_query(self, session_id, query_id, query_terms):
         print("[DEBUG] add_query called with session_id:", session_id)
@@ -136,10 +128,7 @@ class AnalyticsData:
 
         return query_id
     
-    def save_user_context(self, session_id, user_ip, agent):
-        
-        user_id = self.counter_user_id
-        self.counter_user_id += 1
+    def save_user_context(self, user_id, session_id, user_ip, agent):
 
         browser = agent.get("browser", {}).get("name", "Unknown")
         os = agent.get("platform", {}).get("name", "Unknown")

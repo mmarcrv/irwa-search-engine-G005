@@ -1,6 +1,13 @@
-def insert_user(conn, browser, os, ip_address, first_visit, last_visit=None):
+from datetime import datetime
+
+def insert_user(conn, agent, ip_address, last_visit=None):
     cursor = conn.cursor()
 
+    browser = agent.get("browser", {}).get("name", "Unknown")
+    os = agent.get("platform", {}).get("name", "Unknown")
+    ip_address = ip_address
+    first_visit = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     sql = """
         INSERT INTO users (browser, os, ip_address, first_visit, last_visit)
         VALUES (%s, %s, %s, %s, %s)

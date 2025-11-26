@@ -13,6 +13,7 @@ from myapp.search.load_corpus import load_corpus
 from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
+from myapp.analytics.database import insert_user
 
 from myapp.search.algorithms import token_cleaning_text
 
@@ -101,22 +102,14 @@ def index():
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
 
-    #if "user_id" not in session:
-        #user_id = (agafar el user id més petit disponible) de la base de dades per guardar les dades
-        #analytics_data.save_user_context(session['session_id'], user_ip, agent)
-        #session['user_id'] = user_id
-    
-    # if flag_session == False:
-        #session = database
-        #session['session_id'] = analytics_data.new_session()
-    
-    # FORA tot lo de baix
-    if "session_id" not in session:
-        session['session_id'] = analytics_data.new_session()
-
     if "user_id" not in session:
-        user_id = analytics_data.save_user_context(session['session_id'], user_ip, agent)
+        user_id = insert_user(agent=agent, ip_address=user_ip)
+        analytics_data.save_user_context(user_id= user_id, session_id=session['session_id'], user_ip=user_ip, agent=agent)
         session['user_id'] = user_id
+    
+    #if flag_session == False:
+        #session_id = database
+        #session['session_id'] = analytics_data.new_session()
     
     print(session)
     return render_template('index.html', page_title="Welcome")

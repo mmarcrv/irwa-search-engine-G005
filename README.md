@@ -1,4 +1,4 @@
-# Information Retrieval and Web Analytics (IRWA) - Final Project template
+# Information Retrieval and Web Analytics (IRWA) - Final Project
 
 <table>
   <tr>
@@ -6,7 +6,7 @@
       <img src="static/image.png" alt="Project Logo"/>
     </td>
     <td style="vertical-align: top;">
-      This repository contains the template code for the IRWA Final Project - Search Engine with Web Analytics.
+      This repository contains the IRWA Final Project - Search Engine with Web Analytics.
       The project is implemented using Python and the Flask web framework. It includes a simple web application that allows users to search through a collection of documents and view analytics about their searches.
     </td>
   </tr>
@@ -111,27 +111,7 @@ Open Web app in your Browser:
 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) or [http://localhost:8088/](http://localhost:8088/)
 
 
-## Creating your own GitHub repo
-After creating the project and code in local computer...
-
-1. Login to GitHub and create a new repo.
-2. Go to the root page of your new repo and note the url from the browser.
-3. Execute the following locally:
-```bash
-cd <project root folder>
-git init -b main
-git add . && git commit -m "initial commit"
-git remote add origin <your GitHub repo URL from the browser>
-git push -u origin main
-```
-
 ## Usage: 
-0. Put the data file `fashion_products_dataset.json` in the `data` folder. It will be provided to you by the instructor.
-1. As for Parts 1, 2, and 3 of the project, please use the `project_progress` folder to store your solutions. Each part should contain `.pdf` file with your report and `.ipynb` (Jupyter Notebook) file with your code for solution and `README.md` with explanation of the content and instructions for results reproduction.
-2. For the Part 4, of the project, you should build a web application using Flask that allows users to search through a collection of documents and view analytics about their searches. You should work mailnly in the `web_app.py` file `myapp` and `templates` folders. Feel free to change any code or add new files as needed. The provided code is just a starting point to help you get started quickly.
-3. Make sure to update the `.env` file with your Groq API key (can be found [here](https://groq.com/), the free version is more than enough for our purposes) and any other necessary configurations. IMPORTANT: Do not share your `.env` file publicly as it contains sensitive information. It is included in `.gitignore` to prevent accidental commits. (It should never be included in the repos and appear here only for demonstration purposes).
-4. Have fun and be creative!
 
-## Attribution:
-The project is adapted from the following sources:
-- [IRWA Template 2021](https://github.com/irwa-labs/search-engine-web-app)
+1. Make sure to update the `.env` file with your Groq API key (can be found [here](https://groq.com/), the free version is more than enough for our purposes) and any other necessary configurations. IMPORTANT: Do not share your `.env` file publicly as it contains sensitive information. It is included in `.gitignore` to prevent accidental commits. 
+

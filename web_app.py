@@ -9,13 +9,15 @@ from flask import request
 import pandas as pd
 from rank_bm25 import BM25Okapi
 import mysql.connector
+import pymysql
+
 
 from myapp.analytics.analytics_data import AnalyticsData, ClickedDoc
 from myapp.search.load_corpus import load_corpus
 from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
-from myapp.analytics.database import insert_user, insert_session
+from myapp.analytics.database import insert_user, insert_session, get_sessions
 
 from myapp.search.algorithms import token_cleaning_text
 
@@ -46,7 +48,6 @@ analytics_data = AnalyticsData()
 # instantiate RAG generator
 rag_generator = RAGGenerator()
 
-import pymysql
 
 def get_db():
     return pymysql.connect(
@@ -57,7 +58,6 @@ def get_db():
         port=int(os.getenv("MYSQLPORT")),
         cursorclass=pymysql.cursors.DictCursor
     )
-
 
 
 
@@ -116,11 +116,18 @@ def index():
         conn = get_db()
         user_id = insert_user(conn, agent=agent, ip_address=user_ip, first_visit=start_time)
         conn.close()
-        analytics_data.save_user_context(user_id=user_id, user_ip=user_ip, agent=agent, start_time=start_time)
         session['user_id'] = user_id
         print("New user created:", user_id)
-    
-    if flag_session == False:
+    else:
+        print("User already exists:", session['user_id'])
+        # Load previous sessions for this user
+        conn = get_db()
+        sessions = analytics_data.load_sessions(conn, session['user_id'])
+        conn.close()
+        print(f"Loaded {len(sessions)} previous sessions for user {session['user_id']}")
+
+    # Always create a new session when user visits
+    if 'session_id' not in session or flag_session == False:
         conn = get_db()
         session_id = insert_session(conn, start_time=start_time, user_id=session['user_id'])
         conn.close()
@@ -139,6 +146,7 @@ def search_form_post():
     selected_engine = request.form.get('engine', 'tfidf') 
 
     session['last_search_query'] = search_query
+    session['last_search_engine'] = selected_engine
 
     query_terms = token_cleaning_text(search_query)
 
@@ -148,10 +156,19 @@ def search_form_post():
     found_count = len(results)
     session['last_found_count'] = found_count
 
-    search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
-    session['search_id'] = search_id
+    # Save query to database
+    conn = get_db()
+    query_id = analytics_data.save_query(conn, search_query, query_terms, found_count, session['session_id'])
+    conn.close()
+    session['search_id'] = query_id
 
-    analytics_data.add_query(session['session_id'], search_id, query_terms)
+    # Store scores for later retrieval (for displaying in dashboard)
+    doc_scores = {}
+    for i, doc in enumerate(results[:20]):
+        # Store the ranking position as the score for now
+        # You can modify this to store actual TF-IDF/BM25 scores if available
+        doc_scores[doc.pid] = i + 1  # ranking position
+    analytics_data.save_query_scores(query_id, doc_scores)
     
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
@@ -211,12 +228,21 @@ def doc_details():
     except ValueError:
         ranking = -1
 
-    analytics_data.save_document_click(doc_id=clicked_doc_id, query_id=query_id, ranking=ranking)
+    # Save document click to database
+    conn = get_db()
+    analytics_data.save_document_click(conn, doc_id=clicked_doc_id, query_id=query_id, ranking=ranking)
+    
+    # Get all clicks for this document to display in dashboard
+    doc_clicks = analytics_data.get_document_clicks(conn, clicked_doc_id)
+    conn.close()
 
-    print("Current document clicks table:")
-    print(analytics_data.document_clicks_table)
+    # Get the score for this document from the query
+    search_engine_used = session.get('last_search_engine', 'tfidf')
+    doc_score = analytics_data.get_query_score(query_id, clicked_doc_id)
 
-    return render_template('doc_details.html', doc=doc)
+    return render_template('doc_details.html', doc=doc, doc_clicks=doc_clicks, 
+                         click_count=len(doc_clicks), search_engine=search_engine_used,
+                         doc_score=doc_score)
 
 
 @app.route('/stats', methods=['GET'])
@@ -240,17 +266,28 @@ def stats():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+    # Get all document clicks from database
+    conn = get_db()
+    from myapp.analytics.database import get_all_doc_clicks
+    doc_click_stats = get_all_doc_clicks(conn)
+    conn.close()
+    
+    # Build list of visited documents with click counts
     visited_docs = []
-    for doc_id, clicks_list in analytics_data.document_clicks_table.items():
-        d: Document = corpus[doc_id]
-        count = len(clicks_list)
-        doc = ClickedDoc(doc_id, d.description, count)
-        visited_docs.append(doc)
-
-    # simulate sort by ranking
-    visited_docs.sort(key=lambda doc: doc.counter, reverse=True)
-
-    for doc in visited_docs: print(doc)
+    for stat in doc_click_stats:
+        doc_pid = stat['doc_pid']
+        click_count = stat['click_count']
+        
+        # Get document info from corpus
+        if doc_pid in corpus:
+            d = corpus[doc_pid]
+            doc = ClickedDoc(doc_pid, d.description, click_count)
+            visited_docs.append(doc)
+    
+    # Already sorted by click_count DESC from SQL query
+    for doc in visited_docs[:10]:  # Show top 10
+        print(doc)
+    
     return render_template('dashboard.html', visited_docs=visited_docs)
 
 
@@ -267,7 +304,10 @@ def log_dwell_time():
     query_id = data["query_id"]
     dwell_time_ms = data["dwell_time_ms"]
 
-    analytics_data.update_dwell_time(doc_id, query_id, dwell_time_ms)
+    # Update dwell time in database
+    conn = get_db()
+    analytics_data.update_dwell_time(conn, doc_id, query_id, dwell_time_ms)
+    conn.close()
 
     return "", 204   # resposta mínima per sendBeacon
 

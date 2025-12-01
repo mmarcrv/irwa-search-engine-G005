@@ -1,57 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Document Detail - IRWA Search Engine</title>
+  <meta charset="UTF-8">
+  <title>Document Detail - IRWA Search Engine</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .nav a {
+      margin-right: 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    .card {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .col-left {
+      flex: 2;
+      padding-right: 20px;
+    }
+    .col-right {
+      flex: 1;
+      border-left: 1px solid #ddd;
+      padding-left: 20px;
+    }
+    h1 {
+      font-size: 1.8em;
+      margin-top: 0;
+      color: #444;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .badge-success { background-color: #4CAF50; color: white; }
+    .badge-danger { background-color: #f44336; color: white; }
+    .badge-warning { background-color: #FFC107; color: black; }
+    .price {
+      font-size: 1.5em;
+      color: #2E86C1;
+      font-weight: bold;
+    }
+    .rating {
+      font-size: 1.2em;
+      color: #FF9800;
+    }
+    .stars {
+      color: #FF9800;
+      font-size: 1.2em;
+    }
+    .img-thumb {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 5px;
+    }
+  </style>
 </head>
-<script>
-let enterTime = Date.now();
 
-// S'envia quan l'usuari surt de la pàgina
-window.addEventListener("beforeunload", function () {
-    let dwellTime = Date.now() - enterTime;
-
-    navigator.sendBeacon(
-        "/log_dwell_time",
-        JSON.stringify({
-            doc_id: "{{ doc.pid }}",
-            query_id: "{{ session['search_id'] }}",
-            dwell_time_ms: dwellTime
-        })
-    );
-});
-</script>
-    
 <body>
-<div><a href="/" >Home</a></div>
-<div><a href="/stats" >Stats</a></div>
-<div><a href="/dashboard" >Dashboard</a></div>
-<a href="/results" class="btn btn-secondary mb-3">Back to results</a>
-<h1>{{ doc.title }}</h1>
-<p><strong>Product description:</strong> {{ doc.description }}</p>
-<p><strong>Brand:</strong> {{ doc.brand }}</p>
-<p><strong>Category / Subcategory:</strong> {{ doc.category }} / {{ doc.sub_category }}</p>
-<p><strong>Price:</strong> {{ doc.selling_price }}</p>
-<p><strong>Discount:</strong> {{ doc.discount }}</p>
-<p><strong>Average Rating:</strong> {{ doc.average_rating }}</p>
-<p><strong>Stock status:</strong>
-    {% if doc.out_of_stock %}
-        <span style="color:red">Out of stock</span>
-    {% else %}
-        <span style="color:green">In stock</span>
-    {% endif %}
-</p>
-<p><strong>Product details:</strong></p>
-<ul>
-    {% for key, value in doc.product_details.items() %}
-        <li><strong>{{ key }}:</strong> {{ value }}</li>
-    {% endfor %}
-</ul>
-{% if doc.images %}
-    <h3>Images:</h3>
+
+  <div class="nav">
+    <a href="/">Home</a>
+    <a href="/stats">Stats</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/results">Back to results</a>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <!-- Columna esquerra -->
+      <div class="col-left">
+        <h1>{{ doc.title }}</h1>
+        <p><em>{{ doc.category }} / {{ doc.sub_category }}</em></p>
+        <p style="white-space: pre-wrap;">{{ doc.description }}</p>
+      
+        <!-- Product details -->
+        <h4 style="margin-top:15px; color:#555;">Product details:</h4>
+        <ul>
+          {% for key, value in doc.product_details.items() %}
+            {% if key in ["Type","Sleeve","Fit","Fabric","Size","Pattern","Ideal For","Fabric Care"] %}
+              <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Columna dreta -->
+      <div class="col-right">
+        <!-- Price amb $ -->
+        <p class="price">$ {{ doc.selling_price }}</p>
+
+        <!-- Discount -->
+        {% if doc.discount %}
+          <p><span class="badge badge-warning">{{ doc.discount }}% OFF</span></p>
+        {% endif %}
+
+        <!-- Average Rating amb estrelles -->
+        <p class="rating">
+          {{ doc.average_rating }} / 5 
+          <span class="stars">★</span>
+        </p>
+
+        <!-- Stock status -->
+        <p>
+          {% if doc.out_of_stock %}
+            <span class="badge badge-danger">Out of stock</span>
+          {% else %}
+            <span class="badge badge-success">In stock</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+    <!-- Secció d’imatges -->
+    <h4 style="color:#555; margin-top:15px;">Product images:</h4>
+    <div style="background-color:#fafafa; padding:10px; border-radius:6px; display:flex; flex-wrap:wrap;">
     {% for img_url in doc.images %}
-        <img src="{{ img_url }}" width="150">
+        <img src="{{ img_url }}" width="150" 
+            style="margin:5px; border:1px solid #ccc; border-radius:4px; transition:transform 0.2s;"
+            onmouseover="this.style.transform='scale(1.05)';" 
+            onmouseout="this.style.transform='scale(1)';">
     {% endfor %}
-{% endif %}
+    </div>
+
+  <!-- Script de dwell time -->
+  <script>
+    let enterTime = Date.now();
+
+    // S'envia quan l'usuari surt de la pàgina
+    window.addEventListener("beforeunload", function () {
+        let dwellTime = Date.now() - enterTime;
+
+        navigator.sendBeacon(
+            "/log_dwell_time",
+            JSON.stringify({
+                doc_id: "{{ doc.pid }}",
+                query_id: "{{ session['search_id'] }}",
+                dwell_time_ms: dwellTime
+            })
+        );
+    });
+  </script>
+
 </body>
 </html>

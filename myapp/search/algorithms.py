@@ -154,24 +154,36 @@ def search_tf_idf(query, index, idf, tf):
 
 def get_top_n(bm25_model, corpus_dataframe, query_tokens, n=10):
 
-    docs_with_all_terms = []
-    for i, doc_tokens in enumerate(corpus_dataframe["cleaned_title_description_extra_fields"]):
-        if all(term in doc_tokens for term in query_tokens):
-            docs_with_all_terms.append(i)
-
+    #we use the index to find the docs that contain each term
+    docs_per_term = []
+    for t in query_tokens:
+        if t in index:
+            term_docs = {posting[0] for posting in index[t]}
+            docs_per_term.append(term_docs)
+    
+    docs_with_all_terms = set.intersection(*docs_per_term) #only keep the docs that contain all query terms
+   
     if not docs_with_all_terms:
         print("No documents contain all query terms.")
         return []
 
     scores = np.array(bm25_model.get_scores(query_tokens))
 
-    filtered_scores = scores[docs_with_all_terms]
+    pid_to_df_index = {pid: i for i, pid in enumerate(corpus_dataframe["pid"])}
 
-    top_n_local = np.argpartition(filtered_scores, -n)[-n:]
-    top_n_local = top_n_local[np.argsort(-filtered_scores[top_n_local])]
+    filtered = []
+    for pid in docs_with_all_terms:
+        df_idx = pid_to_df_index.get(pid)
+        if df_idx is not None:
+            filtered.append((scores[df_idx], pid))
 
-    top_n_global = [docs_with_all_terms[i] for i in top_n_local]
-    top_n_pids = corpus_dataframe.iloc[top_n_global]["pid"].tolist()
+    filtered_scores_arr = np.array([score for score, _ in filtered])
+    filtered_pids_arr   = np.array([pid    for _, pid    in filtered])
+
+    top_n_local = np.argpartition(filtered_scores_arr, -n)[-n:]
+    top_n_local = top_n_local[np.argsort(-filtered_scores_arr[top_n_local])]
+
+    top_n_pids = filtered_pids_arr[top_n_local].tolist()
 
     return top_n_pids
 
@@ -288,7 +300,7 @@ def search_in_corpus(query, query_terms, corpus, corpus_dataframe, index, tf, id
     if selected_engine == "tfidf":
         ranked_docs, doc_scores = search_tf_idf(query_terms, index, idf, tf)
     elif selected_engine == "bm25":
-        ranked_docs = get_top_n(bm25, corpus_dataframe, query_terms, n=10)
+        ranked_docs = get_top_n(bm25, corpus_dataframe, query_terms, n=10, index=index)
     else:
         # pepitoooo
         ranked_docs, doc_scores = search_pepito(query_terms, index, corpus_dataframe, idf, tf)

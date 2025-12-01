@@ -59,8 +59,6 @@ def get_db():
     )
 
 
-
-
 # load documents corpus into memory.
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
@@ -148,9 +146,10 @@ def search_form_post():
     found_count = len(results)
     session['last_found_count'] = found_count
 
+    # funció per fer el save de la query aquí en el sql!!
     search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
     session['search_id'] = search_id
-
+    ### unir-ho amb això potser??
     analytics_data.add_query(session['session_id'], search_id, query_terms)
     
     # generate RAG response based on user query and retrieved results

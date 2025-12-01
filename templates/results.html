@@ -1,36 +1,49 @@
 {% extends "base.html" %}
 {% block page_title %}{{ page_title }}{% endblock %}
 {% block content %}
-    Found <strong>{{ found_counter }}</strong> results...
-    <hr>
-    {% if rag_response %}
-        <div class="mb-4 p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-            <h5>AI-Generated Summary:</h5>
-            <p>{{ rag_response }}</p>
-        </div>
-    {% endif %}
-    <hr>
-    {% for item in results_list %}
-        <div class="pb-3">
-            <div class="doc-title">
-                <a href="{{ url_for('doc_details') }}?pid={{ item.pid }}">{{ item.title }}</a>...
-                </a>
+Found <strong>{{ found_counter }}</strong> results...
+<hr>
+{% if rag_response %}
+<div class="mb-4 p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+    <h5 style="color: #FFC107;">AI-Generated Summary:</h5>
+    <p style="white-space: pre-wrap;">{{ rag_response }}</p>
+</div>
+{% endif %}
+<hr>
+{% for item in results_list %}
+<div class="card mb-4 shadow-sm result-card">
+    <div class="card-header">
+        <h5 class="my-0 font-weight-normal">
+            <a href="{{ url_for('doc_details') }}?pid={{ item.pid }}" class="text-dark font-weight-bold">{{ item.title
+                }}</a>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>Product Description:</strong></p>
+                <p class="card-text" style="white-space: pre-wrap;">{{ item.description.replace('\n', '\n') }}</p>
             </div>
-            <div class="doc-desc">
-                <strong>Product description:</strong> {{ item.description }}<br>
-                <strong>Selling price:</strong> {{ item.selling_price }}<br>
-                <strong>Discount:</strong> {{ item.discount }}<br>
-                <strong>Average rating:</strong> {{ item.average_rating }}<br>
-                {% if item.out_of_stock %}
-                    <span style="color: red;"><strong>Out of stock</strong></span>
-                {% else %}
-                    <span style="color: green;"><strong>In stock</strong></span>
-                {% endif %}<br>
-                <a href="{{ item.url }}" target="_blank">Visit product page</a>
+            <div class="col-md-4 border-left">
+                <ul class="list-unstyled mt-3 mb-4">
+                    <li><strong>Price:</strong> <span class="h5">{{ item.selling_price }}</span></li>
+                    {% if item.discount %}
+                    <li><strong>Discount:</strong> <span class="badge badge-warning">{{ item.discount }}% OFF</span>
+                    </li>
+                    {% endif %}
+                    <li><strong>Rating:</strong> {{ item.average_rating }} / 5</li>
+                    <li class="mt-2">
+                        {% if item.out_of_stock %}
+                        <span class="badge badge-danger">Out of stock</span>
+                        {% else %}
+                        <span class="badge badge-success">In stock</span>
+                        {% endif %}
+                    </li>
+                </ul>
+                <a href="{{ item.url }}" target="_blank" class="btn btn-lg btn-block btn-primary">Visit product page</a>
             </div>
-
         </div>
-
-    {% endfor %}
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
-

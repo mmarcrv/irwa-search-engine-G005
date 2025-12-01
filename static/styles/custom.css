@@ -58,5 +58,14 @@ input[type=submit]:hover {
     min-width: 300px;
     max-width: 584px;
     font-size: 0.95em;
-    adding-left: 5px;
+    padding-left: 5px;
+}
+
+.result-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
 }

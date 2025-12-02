@@ -74,7 +74,7 @@ print("Using dataset file:", file_path) #to check which dataset is being used
 
 corpus = load_corpus(file_path)
 # Log first element of corpus to verify it loaded correctly:
-print("\nCorpus is loaded... \n First element:\n", list(corpus.values())[0])
+#print("\nCorpus is loaded... \n First element:\n", list(corpus.values())[0])
 
 # Convert corpus to a dataframe structure
 corpus_dataframe = pd.DataFrame(
@@ -92,22 +92,24 @@ print("BM25 search engine ready:", bm25)
 
 # Variable to control the session creation
 flag_session = False
+flag_user = False
 
 # Home URL "/"
 @app.route('/')
 def index():
+    global flag_user, flag_session
     print("starting home url /...")
-
+    
     # flask server creates a session by persisting a cookie in the user's browser.
     # the 'session' object keeps data between multiple requests. Example:
     
     user_agent = request.headers.get('User-Agent')
-    print("Raw user browser:", user_agent)
+    #print("Raw user browser:", user_agent)
 
     user_ip = request.remote_addr
     agent = httpagentparser.detect(user_agent)
 
-    print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
+    #print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     if "user_id" not in session:
@@ -117,7 +119,16 @@ def index():
         analytics_data.save_user_context(user_id=user_id, user_ip=user_ip, agent=agent, start_time=start_time)
         session['user_id'] = user_id
         print("New user created:", user_id)
+        flag_user = True
     
+    if flag_user == False:
+        print("User already exists:", session['user_id'])
+        conn = get_db()
+        sessions = analytics_data.load_sessions(conn, session['user_id'])
+        conn.close()
+        print(f"Loaded {len(sessions)} previous sessions for user {session['user_id']}")
+        flag_user = True
+  
     if flag_session == False:
         conn = get_db()
         session_id = insert_session(conn, start_time=start_time, user_id=session['user_id'])
@@ -125,6 +136,7 @@ def index():
         analytics_data.new_session(session_id=session_id, user_id=session['user_id'], start_time=start_time)
         session['session_id'] = session_id
         print("New session created:", session_id)
+        flag_session = True
     
     print(session)
     return render_template('index.html', page_title="Welcome")
@@ -132,7 +144,14 @@ def index():
 
 @app.route('/search', methods=['POST'])
 def search_form_post():
-    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element="search_button",
+        timestamp=timestamp
+    )
+
     search_query = request.form['search-query']
     selected_engine = request.form.get('engine', 'tfidf') 
 
@@ -147,10 +166,14 @@ def search_form_post():
     session['last_found_count'] = found_count
 
     # funció per fer el save de la query aquí en el sql!!
-    search_id = analytics_data.save_query_terms(search_query, query_terms, found_count)
-    session['search_id'] = search_id
+    conn = get_db()
+    query_id = analytics_data.save_query(conn, search_query, query_terms, found_count, session['session_id'])
+    conn.close()
+    session['search_id'] = query_id
+    
+    analytics_data.save_query_terms(query_id, search_query, query_terms, found_count)
     ### unir-ho amb això potser??
-    analytics_data.add_query(session['session_id'], search_id, query_terms)
+    #analytics_data.add_query(session['session_id'], search_id, query_terms)
     
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)
@@ -163,6 +186,13 @@ def search_form_post():
 
 @app.route('/results', methods=['GET'])
 def show_previous_results():
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element="return_to_results",
+        timestamp=timestamp
+    )
     # Si no hi ha dades, torna a l’index
     if 'last_ranked_docs' not in session:
         return redirect('/')
@@ -200,6 +230,13 @@ def doc_details():
     # get the query string parameters from request
     clicked_doc_id = request.args["pid"]
     print("click in id={}".format(clicked_doc_id))
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element=f"doc_{clicked_doc_id}",
+        timestamp=timestamp
+    )
 
     doc = corpus[clicked_doc_id]
 
@@ -224,6 +261,13 @@ def stats():
     Show simple statistics example. ### Replace with yourdashboard ###
     :return:
     """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element=f"stats",
+        timestamp=timestamp
+    )
 
     docs = []
     for doc_id, clicks_list in analytics_data.document_clicks_table.items():
@@ -239,6 +283,13 @@ def stats():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element=f"dashboard",
+        timestamp=timestamp
+    )
     visited_docs = []
     for doc_id, clicks_list in analytics_data.document_clicks_table.items():
         d: Document = corpus[doc_id]
@@ -256,6 +307,13 @@ def dashboard():
 # New route added for generating an examples of basic Altair plot (used for dashboard)
 @app.route('/plot_number_of_views', methods=['GET'])
 def plot_number_of_views():
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element=f"plot_number_of_views",
+        timestamp=timestamp
+    )
     return analytics_data.plot_number_of_views()
 
 @app.route('/log_dwell_time', methods=['POST'])
@@ -269,6 +327,17 @@ def log_dwell_time():
     analytics_data.update_dwell_time(doc_id, query_id, dwell_time_ms)
 
     return "", 204   # resposta mínima per sendBeacon
+
+@app.before_request
+def track_request():
+    if "user_id" in session and "session_id" in session:
+        analytics_data.log_request(
+            user_id=session["user_id"],
+            session_id=session["session_id"],
+            method=request.method,
+            url=request.path,
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
 
 @app.route('/reset_session')
 def reset_session():

@@ -44,21 +44,134 @@ def insert_session(conn, start_time, user_id):
 
 
 
-""" 
-def fetch_queries(conn, limit=5):
+def update_session_end_time(conn, session_id, end_time):
+    """Update the end_time for a session"""
+    cursor = conn.cursor()
+    
+    sql = """
+        UPDATE sessions 
+        SET end_time = %s 
+        WHERE session_id = %s
+    """
+    
+    cursor.execute(sql, (end_time, session_id))
+    conn.commit()
+    cursor.close()
+
+
+def get_sessions(conn, user_id):
     cursor = conn.cursor()
 
-    # Fetch some rows from search_queries table
-    cursor.execute(f"SELECT query_id, number_of_terms, user FROM search_queries LIMIT {limit}")
-    rows = cursor.fetchall()
+    sql = """
+        SELECT * FROM sessions WHERE user_id = %s ORDER BY start_time DESC
+    """
 
-    print(f"Fetched {len(rows)} rows:")
-    for row in rows:
-        print(row)
-
+    cursor.execute(sql, (user_id,))
+    
+    sessions = cursor.fetchall()
     cursor.close()
-    conn.close()
+    
+    return sessions
 
-# Run the test
-fetch_queries()
-"""  
+
+def insert_query(conn, query, query_terms, num_terms, num_results, timestamp, session_id, mission_id=None):
+    """Insert a new query into the database"""
+    cursor = conn.cursor()
+    
+    sql = """
+        INSERT INTO queries (query, query_terms, num_terms, num_results, timestamp, session_id, mission_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    query_terms_str = " ".join(query_terms) if isinstance(query_terms, (list, set)) else str(query_terms)
+
+    cursor.execute(sql, (query, query_terms_str, num_terms, num_results, timestamp, session_id, mission_id))
+    query_id = cursor.lastrowid
+    
+    conn.commit()
+    cursor.close()
+    
+    return query_id
+
+
+def get_queries_by_session(conn, session_id):
+    """Get all queries for a specific session"""
+    cursor = conn.cursor()
+    
+    sql = """
+        SELECT * FROM queries WHERE session_id = %s ORDER BY timestamp ASC
+    """
+    
+    cursor.execute(sql, (session_id,))
+    queries = cursor.fetchall()
+    cursor.close()
+    
+    return queries
+
+
+def insert_doc_click(conn, query_id, doc_pid, ranking, dwell_time_minutes=None, timestamp=None, returned_to_results=False):
+    """Insert a document click event"""
+    cursor = conn.cursor()
+    
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    sql = """
+        INSERT INTO doc_click (query_id, doc_pid, ranking, dwell_time_minutes, timestamp, returned_to_results)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    
+    cursor.execute(sql, (query_id, doc_pid, ranking, dwell_time_minutes, timestamp, returned_to_results))
+    
+    conn.commit()
+    cursor.close()
+
+
+def update_doc_click_dwell_time(conn, query_id, doc_pid, dwell_time_minutes):
+    """Update the dwell time for a document click"""
+    cursor = conn.cursor()
+    
+    sql = """
+        UPDATE doc_click 
+        SET dwell_time_minutes = %s 
+        WHERE query_id = %s AND doc_pid = %s
+        ORDER BY timestamp DESC
+        LIMIT 1
+    """
+    
+    cursor.execute(sql, (dwell_time_minutes, query_id, doc_pid))
+    conn.commit()
+    cursor.close()
+
+
+def get_doc_clicks(conn, doc_pid):
+    """Get all clicks for a specific document"""
+    cursor = conn.cursor()
+    
+    sql = """
+        SELECT * FROM doc_click WHERE doc_pid = %s ORDER BY timestamp DESC
+    """
+    
+    cursor.execute(sql, (doc_pid,))
+    clicks = cursor.fetchall()
+    cursor.close()
+    
+    return clicks
+
+
+def get_all_doc_clicks(conn):
+    """Get all document clicks for analytics"""
+    cursor = conn.cursor()
+    
+    sql = """
+        SELECT doc_pid, COUNT(*) as click_count
+        FROM doc_click
+        GROUP BY doc_pid
+        ORDER BY click_count DESC
+    """
+    
+    cursor.execute(sql)
+    clicks = cursor.fetchall()
+    cursor.close()
+    
+    return clicks

@@ -105,3 +105,5 @@ The above will start a web server with the application:
 Open Web app in your Browser:  
 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) or [http://localhost:8088/](http://localhost:8088/)
 
+## IMPORTANT:
+Make sure to update the .env file with your Groq API key (can be found here, the free version is more than enough for our purposes) and any other necessary configurations. IMPORTANT: Do not share your .env file publicly as it contains sensitive information. It is included in .gitignore to prevent accidental commits. (It should never be included in the repos and appear here only for demonstration purposes).

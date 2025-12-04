@@ -107,3 +107,20 @@ Open Web app in your Browser:
 
 ## IMPORTANT:
 Make sure to update the .env file with your Groq API key (can be found here, the free version is more than enough for our purposes) and any other necessary configurations. IMPORTANT: Do not share your .env file publicly as it contains sensitive information. It is included in .gitignore to prevent accidental commits. (It should never be included in the repos and appear here only for demonstration purposes).
+
+The enviroment should look like this:
+```bash
+SECRET_KEY = "{secret_key}"
+DEBUG = True
+SESSION_COOKIE_NAME = "IRWA_SEARCH_ENGINE"
+DATA_FILE_PATH = "data/fashion_products_dataset.json"
+
+GROQ_API_KEY = '{secret_API_key_for_grok'
+GROQ_MODEL = "llama-3.1-8b-instant"
+
+MYSQLHOST=caboose.proxy.rlwy.net
+MYSQLPORT=10575
+MYSQLUSER=root
+MYSQLPASSWORD=DBjgUChImMveeqkPZEpAPQyXneqTPHnb
+MYSQLDATABASE=railway
+```

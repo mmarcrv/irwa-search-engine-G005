@@ -167,15 +167,12 @@ def search_form_post():
     found_count = len(results)
     session['last_found_count'] = found_count
 
-    # funció per fer el save de la query aquí en el sql!!
     conn = get_db()
     query_id, mission_id, research_mission_id = analytics_data.save_query(conn, search_query, query_terms, found_count, session['session_id'])
     conn.close()
     session['search_id'] = query_id
     
     analytics_data.save_query_terms(query_id, search_query, query_terms, found_count, session['session_id'], mission_id, research_mission_id)
-    ### unir-ho amb això potser??
-    #analytics_data.add_query(session['session_id'], search_id, query_terms)
     
     # generate RAG response based on user query and retrieved results
     rag_response = rag_generator.generate_response(search_query, results)

@@ -3,8 +3,7 @@ import json
 import altair as alt
 import pandas as pd
 from myapp.analytics.database import (
-    get_sessions, get_queries_by_session, insert_query, 
-    insert_doc_click, update_doc_click_dwell_time, get_doc_clicks
+    get_sessions, get_queries_by_session, insert_query
 )
 
 class AnalyticsData:
@@ -70,10 +69,11 @@ class AnalyticsData:
             # Load queries for this session
             queries = get_queries_by_session(conn, session_id)
             for q in queries:
+                query_terms = q["query_terms"].split(",") if q["query_terms"] else []
                 query = {
                     "query_id": q["id"],
                     "query": q["query"],
-                    "query_terms": q["query_terms"],
+                    "query_terms": query_terms,
                     "num_terms": q["num_terms"],
                     "num_results": q["num_results"],
                     "timestamp": q["timestamp"],
@@ -289,7 +289,7 @@ class AnalyticsData:
             queries_mission = [q for q in self.user_queries if q["session_id"] == session_id and q["mission_id"] == mission_id+1]
             query_terms_mission = None
             for q in queries_mission:
-                query_terms_mission = q["query_terms"]                
+                query_terms_mission = q["query_terms"]               
                 s1 = set(query_terms_mission)
                 s2 = set(query_terms)
                 intersection = s1.intersection(s2)
@@ -337,7 +337,7 @@ class AnalyticsData:
             queries_mission = [q for q in self.user_queries if q["research_mission_id"] == mission_id+1]
             query_terms_mission = None
             for q in queries_mission:
-                query_terms_mission = q["query_terms"]                
+                query_terms_mission = q["query_terms"]  
                 s1 = set(query_terms_mission)
                 s2 = set(query_terms)
                 intersection = s1.intersection(s2)
@@ -348,6 +348,7 @@ class AnalyticsData:
                     sim += len(intersection) / len(union)
 
             sim /= len(queries_mission)
+            
             if sim > best_sim:
                 best_sim = sim
                 best_mission = mission_id

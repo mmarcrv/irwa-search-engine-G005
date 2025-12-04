@@ -109,6 +109,8 @@ The above will start a web server with the application:
 Open Web app in your Browser:  
 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) or [http://localhost:8088/](http://localhost:8088/)
 
+FALTA: explicació base de dades!!! amb el que sha de posar al .env i que si esta tancat o obert
+EL nostre dataset
 
 ## Usage: 
 

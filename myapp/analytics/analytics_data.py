@@ -18,8 +18,8 @@ class AnalyticsData:
     document_clicks_table = {}
 
     ### Please add your custom tables here:
-    query_table = {}
     sessions = []
+    user_queries = []
     user_table = {}
     requests_table = []
     clicks_table = []
@@ -52,92 +52,97 @@ class AnalyticsData:
             "start_time": start_time,
             "user_id": user_id,
             "queries": [],
-            "missions": []
+            "missions": 0
         }
 
         self.sessions.append(new_session)
         print("[DEBUG] Created new session:", new_session)
-        print("[DEBUG] Current sessions list:", self.sessions)
+        print("[DEBUG] Current sessions listed:", len(self.sessions))
 
         return session_id
 
     def load_sessions(self, conn, user_id):
         """Load all sessions for a user from the database"""
         raw_sessions = get_sessions(conn, user_id)
-        
-        sessions = []
-        for session in raw_sessions:
-            session_id = session["session_id"]
+        for s in raw_sessions:
+            session_id = s["session_id"]
             
             # Load queries for this session
             queries = get_queries_by_session(conn, session_id)
             for q in queries:
-                print("Query:", q["query"])
+                query = {
+                    "query_id": q["id"],
+                    "query": q["query"],
+                    "query_terms": q["query_terms"],
+                    "num_terms": q["num_terms"],
+                    "num_results": q["num_results"],
+                    "timestamp": q["timestamp"],
+                    "session_id": q["session_id"],
+                    "mission_id": q["mission_id"],
+                    "research_mission_id": q["research_mission_id"]
+                }
+                self.user_queries.append(query)
             
             # Group queries into missions based on similarity
-            missions = self._group_queries_into_missions(queries)
-            # NO m'acaba d'agrada (la funció aquesta hauria de unir per id no calcular, hauria de ja estar calculat abans de guardar)
-            print("Missions:", missions)
-
-            sessions.append({
+            self.sessions.append({
                 "session_id": session_id,
-                "start_time": session["start_time"],
-                "end_time": session.get("end_time"),
-                "user_id": session["user_id"],
+                "start_time": s["start_time"],
+                "end_time": s.get("end_time"),
+                "user_id": s["user_id"],
                 "queries": queries,
-                "missions": missions
+                "missions": s['missions']
             })
         
-        return sessions
+        return self.sessions
 
-    def _group_queries_into_missions(self, queries):
-        """Group queries into missions based on similarity"""
-        if not queries:
-            return []
+    # def _group_queries_into_missions(self, queries):
+    #     """Group queries into missions based on similarity"""
+    #     if not queries:
+    #         return []
         
-        missions = []
-        THRESHOLD = 0.3
+    #     missions = []
+    #     THRESHOLD = 0.3
         
-        for query in queries:
-            query_id = query["id"]
-            for q in queries:
-                print("Query:", q["query"])
-            query_terms = set(query["query_terms"])
-            for q in queries:
-                print("Query:", q["query_terms"])
+    #     for query in queries:
+    #         query_id = query["id"]
+    #         for q in queries:
+    #             print("Query:", q["query"])
+    #         query_terms = set(query["query_terms"])
+    #         for q in queries:
+    #             print("Query:", q["query_terms"])
             
-            # Find best matching mission
-            best_sim = -1
-            best_mission = None
+    #         # Find best matching mission
+    #         best_sim = -1
+    #         best_mission = None
             
-            for mission in missions:
-                # Get last query in mission
-                last_query_id = mission["query_ids"][-1]
-                last_query = next((q for q in queries if q["id"] == last_query_id), None)
+    #         for mission in missions:
+    #             # Get last query in mission
+    #             last_query_id = mission["query_ids"][-1]
+    #             last_query = next((q for q in queries if q["id"] == last_query_id), None)
                 
-                if last_query:
-                    last_terms = set(last_query["query_terms"])
+    #             if last_query:
+    #                 last_terms = set(last_query["query_terms"])
                     
-                    # Calculate Jaccard similarity
-                    intersection = query_terms.intersection(last_terms)
-                    union = query_terms.union(last_terms)
-                    sim = len(intersection) / len(union) if union else 0.0
+    #                 # Calculate Jaccard similarity
+    #                 intersection = query_terms.intersection(last_terms)
+    #                 union = query_terms.union(last_terms)
+    #                 sim = len(intersection) / len(union) if union else 0.0
                     
-                    if sim > best_sim:
-                        best_sim = sim
-                        best_mission = mission
+    #                 if sim > best_sim:
+    #                     best_sim = sim
+    #                     best_mission = mission
             
-            # Add to existing mission or create new one
-            if best_sim >= THRESHOLD and best_mission:
-                best_mission["query_ids"].append(query_id)
-            else:
-                mission_id = len(missions) + 1
-                missions.append({
-                    "mission_id": mission_id,
-                    "query_ids": [query_id]
-                })
+    #         # Add to existing mission or create new one
+    #         if best_sim >= THRESHOLD and best_mission:
+    #             best_mission["query_ids"].append(query_id)
+    #         else:
+    #             mission_id = len(missions) + 1
+    #             missions.append({
+    #                 "mission_id": mission_id,
+    #                 "query_ids": [query_id]
+    #             })
         
-        return missions
+    #     return missions
     
     def add_query(self, session_id, query_id, query_terms):
         print("[DEBUG] add_query called with session_id:", session_id)
@@ -213,18 +218,23 @@ class AnalyticsData:
 
     
 
-    def save_query_terms(self, query_id, search_query, query_terms, num_results):
+    def save_query_terms(self, query_id, search_query, query_terms, num_results, session_id, mission_id, research_mission_id):
         num_terms = len(query_terms)
 
-        self.query_table[query_id] = {
-            "search_query": search_query,
-            "order": query_terms,
+        query = {
+            "query_id": query_id,
+            "query": search_query,
+            "query_terms": query_terms,
             "num_terms": num_terms,
             "num_results": num_results,
-            "timestamp": pd.Timestamp.now()
+            "timestamp": pd.Timestamp.now(),
+            "session_id": session_id,
+            "mission_id": mission_id,
+            "research_mission_id": research_mission_id  
         }
+        self.user_queries.append(query)
 
-        print("Saved query:", self.query_table[query_id])
+        print("Saved query:", query["query_id"])
 
         return query_id
     
@@ -234,7 +244,8 @@ class AnalyticsData:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Determine mission_id based on similarity with previous queries
-        mission_id = self._determine_mission_id(conn, session_id, query_terms)
+        mission_id = self.determine_mission_id(session_id, query_terms)
+        research_mission_id = self.determine_research_mission_id(session_id, query_terms)
         
         # Insert into database
         query_id = insert_query(
@@ -245,41 +256,112 @@ class AnalyticsData:
             num_results=num_results,
             timestamp=timestamp,
             session_id=session_id,
-            mission_id=mission_id
+            mission_id=mission_id,
+            research_mission_id=research_mission_id
         )
         
         print(f"Saved query {query_id} to database with mission_id={mission_id}")
         
-        return query_id
-    
-    def _determine_mission_id(self, conn, session_id, query_terms):
+        return query_id, mission_id, research_mission_id
+
+    def determine_mission_id(self, session_id, query_terms):
         """Determine which mission this query belongs to"""
         # Get recent queries from this session
-        queries = get_queries_by_session(conn, session_id)
-        # Fer un get missions by session o alguna cosa aixi, per guardar-ho bé
-        # TODO: no funciona si hi ha més de dos possibles sessions
-        if not queries:
-            return 1  # First mission
+        missions = None
+        for s in self.sessions:
+            if s["session_id"] == session_id:
+                missions = s["missions"]
+                break
         
-        # Get the last query's mission_id
-        last_query = queries[-1]
-        last_mission_id = last_query.get("mission_id", 1)
+        if missions == None:
+            for s in self.sessions:
+                if s["session_id"] == session_id:
+                    s["missions"] = 1
+                    break
+            print(f"Added query to NEW mission 1 in session {session_id}")
+            return 1
         
-        # Calculate similarity with last query
-        last_query_terms = set(last_query["query_terms"])
-        current_terms = set(query_terms)
-        
-        # No sé si els càlculs funcionen
-        intersection = last_query_terms.intersection(current_terms)
-        union = last_query_terms.union(current_terms)
-        similarity = len(intersection) / len(union) if union else 0.0
-        
+        # --- 4) Comparar amb totes les missions existents ---
+        best_sim = -1
+        best_mission = None
+        for mission_id in range(missions):
+            sim = 0
+            queries_mission = [q for q in self.user_queries if q["session_id"] == session_id and q["mission_id"] == mission_id+1]
+            query_terms_mission = None
+            for q in queries_mission:
+                query_terms_mission = q["query_terms"]                
+                s1 = set(query_terms_mission)
+                s2 = set(query_terms)
+                intersection = s1.intersection(s2)
+                union = s1.union(s2)
+                if not union:
+                    sim = 0.0
+                else:
+                    sim += len(intersection) / len(union)
+
+            sim /= len(queries_mission)
+            if sim > best_sim:
+                best_sim = sim
+                best_mission = mission_id
+    
+        # --- 5) Decisió: afegir a missió existent o crear-ne una nova ---
         THRESHOLD = 0.3
-        
-        if similarity >= THRESHOLD:
-            return last_mission_id
+
+        if best_sim >= THRESHOLD:
+            print(f"Added query to mission {best_mission+1} (sim={best_sim:.2f})")
+            return best_mission+1
         else:
-            return last_mission_id + 1
+            new_id = missions+1
+            for s in self.sessions:
+                if s["session_id"] == session_id:
+                    s["missions"] = new_id
+                    break
+            print(f"Created NEW mission {new_id} for query (best_sim={best_sim:.2f})")
+            return new_id
+
+    
+    def determine_research_mission_id(self, session_id, query_terms):
+
+        if len(self.user_queries) == 0:
+            return 1
+
+        num_research_missions = max(q["research_mission_id"] for q in self.user_queries)
+
+        print(f"\nCurrent number of research missions: {num_research_missions}\n")
+        
+        # --- 4) Comparar amb totes les missions existents ---
+        best_sim = -1
+        best_mission = None
+        for mission_id in range(num_research_missions):
+            sim = 0
+            queries_mission = [q for q in self.user_queries if q["research_mission_id"] == mission_id+1]
+            query_terms_mission = None
+            for q in queries_mission:
+                query_terms_mission = q["query_terms"]                
+                s1 = set(query_terms_mission)
+                s2 = set(query_terms)
+                intersection = s1.intersection(s2)
+                union = s1.union(s2)
+                if not union:
+                    sim = 0.0
+                else:
+                    sim += len(intersection) / len(union)
+
+            sim /= len(queries_mission)
+            if sim > best_sim:
+                best_sim = sim
+                best_mission = mission_id
+    
+        # --- 5) Decisió: afegir a missió existent o crear-ne una nova ---
+        THRESHOLD = 0.3
+
+        if best_sim >= THRESHOLD:
+            print(f"Added query to mission {best_mission+1} (sim={best_sim:.2f})")
+            return best_mission+1
+        else:
+            new_id = num_research_missions+1
+            print(f"Created NEW mission {new_id} for query (best_sim={best_sim:.2f})")
+            return new_id
     
     def save_user_context(self, user_id, user_ip, agent, start_time):
 

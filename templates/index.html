@@ -1,10 +1,104 @@
 {% extends "base.html" %}
 {% block page_title %}{{ page_title }}{% endblock %}
+
+{% block header %}
+<style>
+    /* Animated gradient background */
+    body {
+        background: linear-gradient(-45deg, #021b35, #023e58, #026b80, #0298a2);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        min-height: 100vh;
+    }
+
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Glassmorphism effect for content */
+    .container {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    /* Style headings */
+    h1,
+    h2,
+    h3 {
+        color: #ffffff !important;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Style text */
+    p,
+    li {
+        color: #e0e0e0 !important;
+    }
+
+    /* Style links */
+    a {
+        color: #4da6ff !important;
+    }
+
+    /* Header styling */
+    .header {
+        color: #ffffff !important;
+    }
+
+    /* Form elements styling */
+    .form-control {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #4da6ff;
+        color: #ffffff;
+    }
+
+    .form-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    .form-select option {
+        background: #1a1a2e;
+        color: #ffffff;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="centered">
     <p>&nbsp;</p>
     <p>&nbsp;</p>
     <p>&nbsp;</p>
+
+    <div class="nav d-flex justify-content-start gap-4 mb-3">
+        <a href="/stats" class="btn btn-outline-info btn-sm">Stats</a>
+        <a href="/dashboard" class="btn btn-outline-info btn-sm">Dashboard</a>
+    </div>
+
 
     <div style="margin-bottom: 10px; text-align: left;">
         <select class="form-select" name="engine" id="engine" style="width: 150px;">
@@ -16,7 +110,7 @@
 
     <form class="d-flex" method="POST" onSubmit='return validate();' action="/search">
         <input class="form-control me-2" name="search-query" type="search" placeholder="Search" aria-label="Search"
-               autofocus="autofocus">
+            autofocus="autofocus">
         <button class="btn btn-primary" type="submit" onclick='this.form.submit();'>Search</button>
         <input name="upf-irwa-hidden" type="hidden" value="123">
     </form>

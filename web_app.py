@@ -380,6 +380,14 @@ def dashboard():
     for doc in visited_docs: print(doc)
     return render_template('dashboard.html', visited_docs=visited_docs)
     """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    analytics_data.log_click(
+        user_id=session["user_id"],
+        session_id=session["session_id"],
+        element="dashboard",
+        timestamp=timestamp
+    )
+
     conn = get_db()
     try:
         with conn.cursor() as cur:
@@ -421,7 +429,6 @@ def dashboard():
         os_data=os_data,
         clicks_returned=clicks_returned
     )
-
 
 # New route added for generating an examples of basic Altair plot (used for dashboard)
 @app.route('/plot_number_of_views', methods=['GET'])

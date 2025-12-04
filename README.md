@@ -20,7 +20,7 @@
 ├── myapp                # Contains the main application logic
 ├── templates            # Contains HTML templates for the Flask application
 ├── static               # Contains static assets (images, CSS, JavaScript)
-├── data                 # Contains the dataset file (fashion_products_dataset.json)
+├── data                 # Contains the dataset file (cleaned_fashion_products.zip)
 ├── project_progress     # Contains your solutions for Parts 1, 2, and 3 of the project
 ├── .env                 # Environment variables for configuration (e.g., API keys)
 ├── .gitignore           # Specifies files and directories to be ignored by Git
@@ -109,6 +109,8 @@ The above will start a web server with the application:
 Open Web app in your Browser:  
 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) or [http://localhost:8088/](http://localhost:8088/)
 
+FALTA: explicació base de dades!!! amb el que sha de posar al .env i que si esta tancat o obert
+EL nostre dataset
 
 ## Usage: 
 

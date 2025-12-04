@@ -395,6 +395,26 @@ def dashboard():
             """)
             clicks_returned = cur.fetchall()
 
+            # Documents més clicats
+            cur.execute("""
+                SELECT doc_pid, COUNT(*) AS num_clicks
+                FROM doc_click
+                GROUP BY doc_pid
+                ORDER BY num_clicks DESC
+                LIMIT 10
+            """)
+            top_docs = cur.fetchall()
+
+            # Consultes més freqüents
+            cur.execute("""
+                SELECT query, COUNT(*) AS freq
+                FROM queries
+                GROUP BY query
+                ORDER BY freq DESC
+                LIMIT 10
+            """)
+            top_queries = cur.fetchall()
+
     finally:
         conn.close()
 
@@ -404,7 +424,9 @@ def dashboard():
         queries_per_day_counts=queries_per_day_counts,
         browsers=browsers,
         os_data=os_data,
-        clicks_returned=clicks_returned
+        clicks_returned=clicks_returned,
+        top_docs=top_docs,
+        top_queries=top_queries
     )
 
 # New route added for generating an examples of basic Altair plot (used for dashboard)

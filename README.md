@@ -20,7 +20,7 @@
 ├── myapp                # Contains the main application logic
 ├── templates            # Contains HTML templates for the Flask application
 ├── static               # Contains static assets (images, CSS, JavaScript)
-├── data                 # Contains the dataset file (fashion_products_dataset.json)
+├── data                 # Contains the dataset file (cleaned_fashion_products.zip)
 ├── project_progress     # Contains your solutions for Parts 1, 2, and 3 of the project
 ├── .env                 # Environment variables for configuration (e.g., API keys)
 ├── .gitignore           # Specifies files and directories to be ignored by Git

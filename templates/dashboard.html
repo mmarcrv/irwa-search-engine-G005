@@ -79,10 +79,20 @@
     <canvas id="clicksReturnedChart"></canvas>
     <script>
       const clicksData = {{ clicks_returned|tojson }};
+      
+      // Map numeric/boolean values to descriptive labels
+      const labels = clicksData.map(c => {
+        if (c.returned_to_results === 1 || c.returned_to_results === true) {
+          return "Returned to results";
+        } else {
+          return "Stayed on document";
+        }
+      });
+    
       new Chart(document.getElementById('clicksReturnedChart'), {
         type: 'pie',
         data: {
-          labels: clicksData.map(c => c.returned_to_results),
+          labels: labels,
           datasets: [{
             data: clicksData.map(c => c.total),
             backgroundColor: ['red','blue']

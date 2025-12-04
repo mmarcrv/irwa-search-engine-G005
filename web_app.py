@@ -15,7 +15,7 @@ from myapp.search.load_corpus import load_corpus
 from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
-from myapp.analytics.database import insert_user, insert_session
+from myapp.analytics.database import insert_user, insert_session, insert_doc_click, update_doc_click_dwell_time
 
 from myapp.search.algorithms import token_cleaning_text
 
@@ -83,12 +83,12 @@ corpus_dataframe = pd.DataFrame(
 
 # Create the index, tf, df and idf to avoid repeating this for every search
 index_tf, tf, df, idf = create_index_tfidf(corpus_dataframe)
-print("\nCreated index, tf, df and idf...")
+print("\nCreated index, tf, df and idf!")
 
 # Create BM25 model to avoid repeating this for every search
 paragraph_tokens = corpus_dataframe["cleaned_title_description_extra_fields"].tolist()
 bm25 = BM25Okapi(paragraph_tokens)
-print("BM25 search engine ready:", bm25)
+print("\nBM25 search engine ready!")
 
 # Variable to control the session creation
 flag_session = False
@@ -104,7 +104,7 @@ def index():
     # the 'session' object keeps data between multiple requests. Example:
     
     user_agent = request.headers.get('User-Agent')
-    #print("Raw user browser:", user_agent)
+    print("\nRaw user browser:", user_agent)
 
     user_ip = request.remote_addr
     agent = httpagentparser.detect(user_agent)
@@ -167,11 +167,11 @@ def search_form_post():
 
     # funció per fer el save de la query aquí en el sql!!
     conn = get_db()
-    query_id = analytics_data.save_query(conn, search_query, query_terms, found_count, session['session_id'])
+    query_id, mission_id, research_mission_id = analytics_data.save_query(conn, search_query, query_terms, found_count, session['session_id'])
     conn.close()
     session['search_id'] = query_id
     
-    analytics_data.save_query_terms(query_id, search_query, query_terms, found_count)
+    analytics_data.save_query_terms(query_id, search_query, query_terms, found_count, session['session_id'], mission_id, research_mission_id)
     ### unir-ho amb això potser??
     #analytics_data.add_query(session['session_id'], search_id, query_terms)
     
@@ -248,6 +248,9 @@ def doc_details():
         ranking = -1
 
     analytics_data.save_document_click(doc_id=clicked_doc_id, query_id=query_id, ranking=ranking)
+    conn = get_db()
+    insert_doc_click(conn, doc_pid=clicked_doc_id, query_id=query_id, ranking=ranking)
+    conn.close()
 
     print("Current document clicks table:")
     print(analytics_data.document_clicks_table)
@@ -323,8 +326,12 @@ def log_dwell_time():
     doc_id = data["doc_id"]
     query_id = data["query_id"]
     dwell_time_ms = data["dwell_time_ms"]
+    returned_via_results = data["returned_via_results"]
 
     analytics_data.update_dwell_time(doc_id, query_id, dwell_time_ms)
+    conn = get_db()
+    update_doc_click_dwell_time(conn, query_id, doc_id, (dwell_time_ms / 60000), returned_via_results)
+    conn.close()
 
     return "", 204   # resposta mínima per sendBeacon
 

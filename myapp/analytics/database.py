@@ -65,11 +65,11 @@ def insert_session(conn, start_time, user_id):
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO sessions (start_time, user_id)
-        VALUES (%s, %s)
+        INSERT INTO sessions (start_time, user_id, missions)
+        VALUES (%s, %s, %s)
     """
 
-    cursor.execute(sql, (start_time, user_id))
+    cursor.execute(sql, (start_time, user_id, 0))
     
     # Get the generated user_id from the RETURNING clause
     session_id = cursor.lastrowid
@@ -112,18 +112,18 @@ def get_sessions(conn, user_id):
     return sessions
 
 
-def insert_query(conn, query, query_terms, num_terms, num_results, timestamp, session_id, mission_id=None):
+def insert_query(conn, query, query_terms, num_terms, num_results, timestamp, session_id, mission_id, research_mission_id):
     """Insert a new query into the database"""
     cursor = conn.cursor()
     
     sql = """
-        INSERT INTO queries (query, query_terms, num_terms, num_results, timestamp, session_id, mission_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO queries (query, query_terms, num_terms, num_results, timestamp, session_id, mission_id, research_mission_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     query_terms_str = " ".join(query_terms) if isinstance(query_terms, (list, set)) else str(query_terms)
 
-    cursor.execute(sql, (query, query_terms_str, num_terms, num_results, timestamp, session_id, mission_id))
+    cursor.execute(sql, (query, query_terms_str, num_terms, num_results, timestamp, session_id, mission_id, research_mission_id))
     query_id = cursor.lastrowid
     
     conn.commit()
@@ -165,19 +165,19 @@ def insert_doc_click(conn, query_id, doc_pid, ranking, dwell_time_minutes=None, 
     cursor.close()
 
 
-def update_doc_click_dwell_time(conn, query_id, doc_pid, dwell_time_minutes):
+def update_doc_click_dwell_time(conn, query_id, doc_pid, dwell_time_minutes, returned_to_results):
     """Update the dwell time for a document click"""
     cursor = conn.cursor()
     
     sql = """
         UPDATE doc_click 
-        SET dwell_time_minutes = %s 
+        SET dwell_time_minutes = %s, returned_to_results = %s 
         WHERE query_id = %s AND doc_pid = %s
         ORDER BY timestamp DESC
         LIMIT 1
     """
     
-    cursor.execute(sql, (dwell_time_minutes, query_id, doc_pid))
+    cursor.execute(sql, (dwell_time_minutes, returned_to_results, query_id, doc_pid))
     conn.commit()
     cursor.close()
 

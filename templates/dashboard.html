@@ -23,7 +23,73 @@
     -->
 
     <h3>Dashboard</h3>
-    <iframe src="/plot_number_of_views" width="600" height="400" style="border: none;"></iframe>
+
+    <h4>Consultes per dia</h4>
+    <canvas id="queriesPerDay"></canvas>
+    <script>
+      new Chart(document.getElementById('queriesPerDay'), {
+        type: 'line',
+        data: {
+          labels: {{ queries_per_day_labels|tojson }},
+          datasets: [{
+            label: 'Consultes per dia',
+            data: {{ queries_per_day_counts|tojson }},
+            borderColor: 'blue',
+            fill: false
+          }]
+        }
+      });
+    </script>
+    
+    <h4>Navegadors més utilitzats</h4>
+    <canvas id="browsersChart"></canvas>
+    <script>
+      const browsersData = {{ browsers|tojson }};
+      new Chart(document.getElementById('browsersChart'), {
+        type: 'bar',
+        data: {
+          labels: browsersData.map(b => b.browser),
+          datasets: [{
+            label: 'Usuaris per navegador',
+            data: browsersData.map(b => b.total),
+            backgroundColor: 'green'
+          }]
+        }
+      });
+    </script>
+    
+    <h4>Sistemes operatius més utilitzats</h4>
+    <canvas id="osChart"></canvas>
+    <script>
+      const osData = {{ os_data|tojson }};
+      new Chart(document.getElementById('osChart'), {
+        type: 'bar',
+        data: {
+          labels: osData.map(o => o.os),
+          datasets: [{
+            label: 'Usuaris per OS',
+            data: osData.map(o => o.total),
+            backgroundColor: 'orange'
+          }]
+        }
+      });
+    </script>
+    
+    <h4>Clics retornats als resultats</h4>
+    <canvas id="clicksReturnedChart"></canvas>
+    <script>
+      const clicksData = {{ clicks_returned|tojson }};
+      new Chart(document.getElementById('clicksReturnedChart'), {
+        type: 'pie',
+        data: {
+          labels: clicksData.map(c => c.returned_to_results),
+          datasets: [{
+            data: clicksData.map(c => c.total),
+            backgroundColor: ['red','blue']
+          }]
+        }
+      });
+    </script>    
 
 
 {% endblock %}

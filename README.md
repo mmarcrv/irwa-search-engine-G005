@@ -1,17 +1,5 @@
 # Information Retrieval and Web Analytics (IRWA) - Final Project
 
-<table>
-  <tr>
-    <td style="vertical-align: top;">
-      <img src="static/image.png" alt="Project Logo"/>
-    </td>
-    <td style="vertical-align: top;">
-      This repository contains the IRWA Final Project - Search Engine with Web Analytics.
-      The project is implemented using Python and the Flask web framework. It includes a simple web application that allows users to search through a collection of documents and view analytics about their searches.
-    </td>
-  </tr>
-</table>
-
 ----
 ## Project Structure
 
@@ -86,8 +74,16 @@ If you need to add more packages in the future, you can install them with pip an
 pip freeze > requirements.txt
 ```
 
-Enjoy!
-
+To use the external database you must include this variables in the .env:
+```bash
+MYSQLHOST=caboose.proxy.rlwy.net
+MYSQLPORT=10575
+MYSQLUSER=root
+MYSQLPASSWORD=DBjgUChImMveeqkPZEpAPQyXneqTPHnb
+MYSQLDATABASE=railway
+```
+We have to open the database because it is a free service and it consumes the credits if we leave it open. Write an email to us so we turn it on for you!
+marc.rodriguez09@estudiant.upf.edu or pau.reig01@estudiant.upf.edu or clara.serra04@estudiant.upf.edu
 
 ## Starting the Web App
 ```bash
@@ -108,11 +104,4 @@ The above will start a web server with the application:
 
 Open Web app in your Browser:  
 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) or [http://localhost:8088/](http://localhost:8088/)
-
-FALTA: explicació base de dades!!! amb el que sha de posar al .env i que si esta tancat o obert
-EL nostre dataset
-
-## Usage: 
-
-1. Make sure to update the `.env` file with your Groq API key (can be found [here](https://groq.com/), the free version is more than enough for our purposes) and any other necessary configurations. IMPORTANT: Do not share your `.env` file publicly as it contains sensitive information. It is included in `.gitignore` to prevent accidental commits. 
 

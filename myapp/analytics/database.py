@@ -1,5 +1,43 @@
 from datetime import datetime
 
+
+def insert_log_request(conn, session_id, user_id, method, url, timestamp):
+    cursor = conn.cursor()
+
+    # Obtenir el següent request_id per la sessió
+    cursor.execute("SELECT MAX(request_id) FROM log_request WHERE session_id = %s", (session_id,))
+    result = cursor.fetchone()
+    next_request_id = (result[0] or 0) + 1
+
+    sql = """
+        INSERT INTO log_request (request_id, session_id, user_id, method, url, timestamp)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    cursor.execute(sql, (next_request_id, session_id, user_id, method, url, timestamp))
+    conn.commit()
+    cursor.close()
+
+    return next_request_id
+
+
+def insert_log_click(conn, session_id, user_id, element, timestamp):
+    cursor = conn.cursor()
+
+    # Obtenir el següent click_id per la sessió
+    cursor.execute("SELECT MAX(click_id) FROM log_click WHERE session_id = %s", (session_id,))
+    result = cursor.fetchone()
+    next_click_id = (result[0] or 0) + 1
+
+    sql = """
+        INSERT INTO log_click (click_id, session_id, user_id, element, timestamp)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    cursor.execute(sql, (next_click_id, session_id, user_id, element, timestamp))
+    conn.commit()
+    cursor.close()
+
+    return next_click_id
+
 def insert_user(conn, agent, ip_address, first_visit, last_visit=None):
     cursor = conn.cursor()
 

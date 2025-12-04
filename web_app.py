@@ -8,7 +8,6 @@ from flask import Flask, redirect, render_template, session
 from flask import request
 import pandas as pd
 from rank_bm25 import BM25Okapi
-import mysql.connector
 
 from myapp.analytics.analytics_data import AnalyticsData, ClickedDoc
 from myapp.search.load_corpus import load_corpus
@@ -264,6 +263,7 @@ def stats():
     Show simple statistics example. ### Replace with yourdashboard ###
     :return:
     """
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     analytics_data.log_click(
         user_id=session["user_id"],
@@ -271,7 +271,7 @@ def stats():
         element=f"stats",
         timestamp=timestamp
     )
-
+    """
     docs = []
     for doc_id, clicks_list in analytics_data.document_clicks_table.items():
         row: Document = corpus[doc_id]
@@ -282,6 +282,63 @@ def stats():
     # simulate sort by ranking
     docs.sort(key=lambda doc: doc.count, reverse=True)
     return render_template('stats.html', clicks_data=docs)
+    """
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Indicadors clau
+            cur.execute("SELECT COUNT(*) AS total FROM users")
+            num_users = cur.fetchone()["total"]
+
+            cur.execute("SELECT COUNT(*) AS total FROM sessions")
+            num_sessions = cur.fetchone()["total"]
+
+            cur.execute("SELECT COUNT(*) AS total FROM queries")
+            num_queries = cur.fetchone()["total"]
+
+            cur.execute("SELECT COUNT(*) AS total FROM doc_click")
+            num_doc_clicks = cur.fetchone()["total"]
+
+            cur.execute("SELECT ROUND(AVG(dwell_time_minutes),2) AS avg_dwell FROM doc_click")
+            avg_dwell_time = cur.fetchone()["avg_dwell"]
+
+            # Comptar clics per document
+            cur.execute("""
+                SELECT doc_pid, COUNT(*) AS num_clicks
+                FROM doc_click
+                GROUP BY doc_pid
+                ORDER BY num_clicks DESC
+            """)
+            rows = cur.fetchall()
+
+            docs = []
+            for r in rows:
+                doc_id = r["doc_pid"]
+                count = r["num_clicks"]
+                # Suposant que tens corpus[doc_id] amb metadades
+                row = corpus[doc_id]
+                doc = StatsDocument(
+                    pid=row.pid,
+                    title=row.title,
+                    description=row.description,
+                    url=row.url,
+                    count=count
+                )
+                docs.append(doc)
+
+    finally:
+        conn.close()
+
+    return render_template(
+        'stats.html',
+        clicks_data=docs,
+        num_users=num_users,
+        num_sessions=num_sessions,
+        num_queries=num_queries,
+        num_doc_clicks=num_doc_clicks,
+        avg_dwell_time=avg_dwell_time
+    )
 
 
 @app.route('/dashboard', methods=['GET'])
@@ -293,6 +350,8 @@ def dashboard():
         element=f"dashboard",
         timestamp=timestamp
     )
+
+    """
     visited_docs = []
     for doc_id, clicks_list in analytics_data.document_clicks_table.items():
         d: Document = corpus[doc_id]
@@ -305,6 +364,48 @@ def dashboard():
 
     for doc in visited_docs: print(doc)
     return render_template('dashboard.html', visited_docs=visited_docs)
+    """
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Consultes per dia
+            cur.execute("""
+                SELECT DATE(timestamp) AS day, COUNT(*) AS num_queries
+                FROM queries
+                GROUP BY day
+                ORDER BY day
+            """)
+            rows = cur.fetchall()
+            queries_per_day_labels = [r["day"].strftime("%Y-%m-%d") for r in rows]
+            queries_per_day_counts = [r["num_queries"] for r in rows]
+
+            # Navegadors
+            cur.execute("SELECT browser, COUNT(*) AS total FROM users GROUP BY browser")
+            browsers = cur.fetchall()
+
+            # Sistemes operatius
+            cur.execute("SELECT os, COUNT(*) AS total FROM users GROUP BY os")
+            os_data = cur.fetchall()
+
+            # Clics retornats
+            cur.execute("""
+                SELECT returned_to_results, COUNT(*) AS total
+                FROM doc_click
+                GROUP BY returned_to_results
+            """)
+            clicks_returned = cur.fetchall()
+
+    finally:
+        conn.close()
+
+    return render_template(
+        'dashboard.html',
+        queries_per_day_labels=queries_per_day_labels,
+        queries_per_day_counts=queries_per_day_counts,
+        browsers=browsers,
+        os_data=os_data,
+        clicks_returned=clicks_returned
+    )
 
 
 # New route added for generating an examples of basic Altair plot (used for dashboard)

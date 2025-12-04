@@ -3,8 +3,7 @@ import json
 import altair as alt
 import pandas as pd
 from myapp.analytics.database import (
-    get_sessions, get_queries_by_session, insert_query, 
-    insert_doc_click, update_doc_click_dwell_time, get_doc_clicks
+    get_sessions, get_queries_by_session, insert_query
 )
 
 class AnalyticsData:

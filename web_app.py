@@ -14,7 +14,7 @@ from myapp.search.load_corpus import load_corpus
 from myapp.search.objects import Document, StatsDocument
 from myapp.search.search_engine import SearchEngine
 from myapp.search.algorithms import create_index_tfidf
-from myapp.analytics.database import insert_user, insert_session, insert_doc_click, update_doc_click_dwell_time
+from myapp.analytics.database import insert_user, insert_session, insert_doc_click, update_doc_click_dwell_time, insert_log_click, insert_log_request
 
 from myapp.search.algorithms import token_cleaning_text
 
@@ -144,12 +144,15 @@ def index():
 @app.route('/search', methods=['POST'])
 def search_form_post():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element="search_button",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element="search_button", timestamp=timestamp)
+    conn.close()
 
     search_query = request.form['search-query']
     selected_engine = request.form.get('engine', 'tfidf') 
@@ -186,12 +189,15 @@ def search_form_post():
 @app.route('/results', methods=['GET'])
 def show_previous_results():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element="return_to_results",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element="return_to_results", timestamp=timestamp)
+    conn.close()
     # Si no hi ha dades, torna a l’index
     if 'last_ranked_docs' not in session:
         return redirect('/')
@@ -230,12 +236,15 @@ def doc_details():
     clicked_doc_id = request.args["pid"]
     print("click in id={}".format(clicked_doc_id))
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element=f"doc_{clicked_doc_id}",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element=f"doc_{clicked_doc_id}", timestamp=timestamp)
+    conn.close()
 
     doc = corpus[clicked_doc_id]
 
@@ -265,12 +274,15 @@ def stats():
     """
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element=f"stats",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element=f"stats", timestamp=timestamp)
+    conn.close()
     """
     docs = []
     for doc_id, clicks_list in analytics_data.document_clicks_table.items():
@@ -344,12 +356,15 @@ def stats():
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element=f"dashboard",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element=f"dashboard", timestamp=timestamp)
+    conn.close()
 
     """
     visited_docs = []
@@ -412,12 +427,15 @@ def dashboard():
 @app.route('/plot_number_of_views', methods=['GET'])
 def plot_number_of_views():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
     analytics_data.log_click(
         user_id=session["user_id"],
         session_id=session["session_id"],
         element=f"plot_number_of_views",
         timestamp=timestamp
     )
+    insert_log_click(conn, session_id=session["session_id"], user_id=session["user_id"], element=f"plot_number_of_views", timestamp=timestamp)
+    conn.close()
     return analytics_data.plot_number_of_views()
 
 @app.route('/log_dwell_time', methods=['POST'])
@@ -446,6 +464,16 @@ def track_request():
             url=request.path,
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
+        conn = get_db()
+        insert_log_request(
+            conn,
+            user_id=session["user_id"],
+            session_id=session["session_id"],
+            method=request.method,
+            url=request.path,
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        conn.close()
 
 @app.route('/reset_session')
 def reset_session():

@@ -3,23 +3,28 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-def insert_user(conn, browser, os, ip_address, first_visit, last_visit=None):
+def insert_user():
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO users (browser, os, ip, first_seen, last_seen)
-        VALUES (%s, %s, %s, %s, %s)
+        CREATE TABLE log_request (
+            request_id INT AUTO_INCREMENT PRIMARY KEY,
+            session_id INT,
+            user_id INT,
+            method VARCHAR(10),
+            url TEXT,
+            timestamp DATETIME
+        );
     """
 
-    cursor.execute(sql, (browser, os, ip_address, first_visit, last_visit))
+    cursor.execute(sql)
     
     # Get the last inserted ID - MySQL way
-    user_id = cursor.lastrowid
     
     conn.commit()
     cursor.close()
     
-    return user_id
+    return 1
 
 # DATABASE SETUP
 def get_db():
@@ -35,6 +40,6 @@ def get_db():
 
 conn = get_db()
 first_visit = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-user_id = insert_user(conn, "Chrome", "IOS", "170.0.0.0", first_visit=first_visit)
+user_id = insert_user()
 print("Inserted user with ID:", user_id)
 conn.close()

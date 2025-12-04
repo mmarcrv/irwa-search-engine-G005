@@ -37,7 +37,7 @@
 Open a terminal console and execute:
 ```
 cd <your preferred projects root directory>
-git clone https://github.com/trokhymovych/irwa-search-engine.git
+git clone https://github.com/mmarcrv/irwa-search-engine-G005.git
 ```
 
 ## Setting up the Python environment (only for the first time you run the project)
